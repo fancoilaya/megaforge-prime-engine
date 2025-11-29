@@ -1,24 +1,12 @@
 # bot/main.py
-import os
-import subprocess
-from bot.webserver import app as fastapi_app
 import uvicorn
+from fastapi import FastAPI
 
-def start_poller_process():
-    # Launch the poller as a separate python process (module)
-    # Use -u to make stdout/stderr unbuffered so logs appear in Render immediately
-    cmd = [os.sys.executable, "-u", "-m", "bot.poller"]
-    print("Starting poller subprocess:", cmd)
-    # note: do NOT wait(); keep it running. We don't need to capture output here.
-    return subprocess.Popen(cmd)
+app = FastAPI()
 
-def main():
-    # Start poller child process
-    proc = start_poller_process()
-
-    # Start fastapi in this (main) process so Render detects port
-    port = int(os.environ.get("PORT", 10000))
-    uvicorn.run(fastapi_app, host="0.0.0.0", port=port)
+@app.get("/")
+async def root():
+    return {"status": "MegaForge Prime Engine is online"}
 
 if __name__ == "__main__":
-    main()
+    uvicorn.run("bot.main:app", host="0.0.0.0", port=10000)
