@@ -1,0 +1,13 @@
+services:
+- type: web
+name: megaforge-prime
+env: python
+buildCommand: "pip install -r requirements.txt"
+startCommand: "python bot/main.py"
+envVars:
+- key: STABILITY_API_KEY
+sync: false
+- key: TELEGRAM_BOT_TOKEN
+sync: false
+- key: SCHEDULER_ENABLED
+sync: false
