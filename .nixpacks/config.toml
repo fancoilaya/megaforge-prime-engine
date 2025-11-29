@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = [
+  "python310",
+  "python310Packages.pip"
+]
+
+[variables]
+PYTHON_VERSION = "3.10"
