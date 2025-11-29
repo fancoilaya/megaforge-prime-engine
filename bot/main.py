@@ -1,3 +1,12 @@
+import sys
+import os
+
+# --- FIX: Ensure project root is in Python path ---
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+# --------------------------------------------------
+
 from telegram.ext import ApplicationBuilder
 from bot.config import TELEGRAM_BOT_TOKEN, SCHEDULER_ENABLED
 from bot.handlers.start import register_start
