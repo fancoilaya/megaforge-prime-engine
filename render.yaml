@@ -2,7 +2,7 @@ services:
   - name: megaforge-prime
     type: web
     env: python
-    runtime: python-3.10.12
+    runtime: python-3.10
     buildCommand: |
       pip install --upgrade pip
       pip install -r requirements.txt
