@@ -1,12 +1,31 @@
-# bot/main.py
+import subprocess
 import uvicorn
-from fastapi import FastAPI
+from bot.web import app  # Your FastAPI app
 
-app = FastAPI()
 
-@app.get("/")
-async def root():
-    return {"status": "MegaForge Prime Engine is online"}
+def start_poller():
+    """
+    Launch the Telegram bot poller as a separate OS process.
+    This prevents event-loop conflicts with Uvicorn.
+    """
+    print("Starting MegaForge Poller (subprocess)...")
+    subprocess.Popen(
+        ["python", "-m", "bot.poller"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
 
 if __name__ == "__main__":
-    uvicorn.run("bot.main:app", host="0.0.0.0", port=10000)
+    # Start the Telegram poller in the background
+    start_poller()
+
+    print("MegaForge Prime Engine (webserver) is online.")
+
+    # Launch FastAPI via Uvicorn (Render will bind to PORT)
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=10000,   # Render exposes this automatically
+        log_level="info"
+    )
