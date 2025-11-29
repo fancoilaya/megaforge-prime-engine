@@ -1,10 +1,13 @@
 services:
-  - type: web
-    name: megaforge-prime
+  - name: megaforge-prime
+    type: web
     env: python
     runtime: python-3.10.12
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "python bot/main.py"
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    startCommand: python bot/main.py
+    autoDeploy: true
     envVars:
       - key: STABILITY_API_KEY
         sync: false
