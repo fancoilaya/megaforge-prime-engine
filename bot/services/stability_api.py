@@ -1,26 +1,32 @@
+# bot/services/stability_api.py
+
 import requests
-import uuid
 import os
-from bot.config import STABILITY_API_KEY
 
-OUTPUT_DIR = "bot/storage/generated/"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+API_KEY = os.getenv("STABILITY_API_KEY")
 
-def generate_image(prompt):
-    url = "https://api.stability.ai/v2beta/stable-image/generate/standard"
+def generate_image(prompt: str) -> str:
+    url = "https://api.stability.ai/v2beta/stable-image/generate/core"
 
-    headers = {"Authorization": f"Bearer {STABILITY_API_KEY}"}
-    payload = {
-        "prompt": prompt,
-        "output_format": "png",
-        "aspect_ratio": "1:1"
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Accept": "application/json"
     }
 
-    response = requests.post(url, headers=headers, json=payload)
+    data = {
+        "prompt": prompt,
+        "output_format": "png"
+    }
+
+    response = requests.post(url, headers=headers, json=data)
     response.raise_for_status()
 
-    filename = f"{OUTPUT_DIR}{uuid.uuid4()}.png"
-    with open(filename, "wb") as f:
-        f.write(response.content)
+    result = response.json()
 
-    return filename
+    image_bytes = bytes(result["image"], "utf-8")
+    output_path = "/tmp/generated.png"
+
+    with open(output_path, "wb") as f:
+        f.write(image_bytes)
+
+    return output_path
