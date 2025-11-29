@@ -1,32 +1,34 @@
-# bot/services/stability_api.py
-
 import requests
+import uuid
 import os
-
-API_KEY = os.getenv("STABILITY_API_KEY")
+from bot.config import STABILITY_API_KEY
 
 def generate_image(prompt: str) -> str:
-    url = "https://api.stability.ai/v2beta/stable-image/generate/core"
-
+    url = "https://api.stability.ai/v2beta/stable-image/generate/standard"
     headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Accept": "application/json"
+        "Authorization": f"Bearer {STABILITY_API_KEY}",
+        "Accept": "application/json",
+        "Content-Type": "application/json",
     }
 
-    data = {
+    payload = {
         "prompt": prompt,
-        "output_format": "png"
+        "aspect_ratio": "1:1",
     }
 
-    response = requests.post(url, headers=headers, json=data)
+    response = requests.post(url, json=payload)
     response.raise_for_status()
 
-    result = response.json()
+    data = response.json()
+    image_base64 = data["image"]
 
-    image_bytes = bytes(result["image"], "utf-8")
-    output_path = "/tmp/generated.png"
+    # Decode
+    import base64
+    image_bytes = base64.b64decode(image_base64)
 
-    with open(output_path, "wb") as f:
+    # Save
+    path = f"/tmp/{uuid.uuid4()}.png"
+    with open(path, "wb") as f:
         f.write(image_bytes)
 
-    return output_path
+    return path
