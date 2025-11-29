@@ -1,10 +1,12 @@
-import asyncio
+import logging
 from telegram.ext import ApplicationBuilder
-from bot.handlers.generator import generator_handler
 from bot.config import TELEGRAM_BOT_TOKEN
+from bot.handlers.generator import generator_handler
+
+logging.basicConfig(level=logging.INFO)
 
 
-async def main():
+def main():
     print("MegaForge Poller: starting (child process)")
 
     app = (
@@ -13,22 +15,12 @@ async def main():
         .build()
     )
 
+    # register handlers
     app.add_handler(generator_handler)
 
     print("MegaForge Poller: running polling...")
-
-    # IMPORTANT:
-    # PTB manages its own internal event loop – DO NOT wrap it in asyncio.run()
-    await app.run_polling(close_loop=False)
+    app.run_polling()  # <-- synchronous, no asyncio, no loop issues
 
 
 if __name__ == "__main__":
-    # Run inside existing event loop if any
-    try:
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(main())
-    except RuntimeError:
-        # If no loop exists, create one
-        new_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(new_loop)
-        new_loop.run_until_complete(main())
+    main()
