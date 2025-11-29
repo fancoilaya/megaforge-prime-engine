@@ -1,14 +1,6 @@
-import sys
-import os
-
-# --- FIX: Ensure project root is in Python path ---
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if ROOT_DIR not in sys.path:
-    sys.path.insert(0, ROOT_DIR)
-# --------------------------------------------------
-
+import asyncio
 from telegram.ext import ApplicationBuilder
-from bot.config import TELEGRAM_BOT_TOKEN, SCHEDULER_ENABLED
+from bot.utils.config import TELEGRAM_BOT_TOKEN, SCHEDULER_ENABLED
 from bot.handlers.start import register_start
 from bot.handlers.commands import register_commands
 from bot.utils.scheduler import init_scheduler
@@ -23,9 +15,10 @@ async def main():
         init_scheduler(app)
 
     print("MegaForge Prime Engine is online.")
+
+    # DO NOT wrap this in asyncio.run()
     await app.run_polling()
 
-
 if __name__ == "__main__":
-    import asyncio
+    # Start the event loop ONCE
     asyncio.run(main())
