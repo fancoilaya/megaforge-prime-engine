@@ -17,26 +17,30 @@ logging.basicConfig(level=logging.INFO)
 
 def start_bot_thread():
     """Runs the Telegram bot inside its own event loop in a background thread."""
-    
-    # Create an independent event loop for this thread (REQUIRED for PTB v20+)
+
+    # Create event loop for this thread
     asyncio.set_event_loop(asyncio.new_event_loop())
     loop = asyncio.get_event_loop()
 
-    # Build Telegram bot
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
 
-    # Register bot commands
+    # Commands
     app.add_handler(CommandHandler("grokposter", handle_grokart))
     app.add_handler(CommandHandler("grokart", handle_grokart))
 
     logging.info("Starting Telegram bot polling in thread...")
 
-    # Run PTB inside this thread’s own event loop
-    loop.run_until_complete(app.run_polling())
+    # Disable signal handlers → REQUIRED to run in threads
+    loop.run_until_complete(
+        app.run_polling(
+            stop_signals=None,           # <-- FIX for your error
+            allowed_updates=None,
+            drop_pending_updates=True,
+        )
+    )
 
 
 def start_web():
-    """Starts FastAPI server on main thread."""
     port = int(os.getenv("PORT", 8000))
 
     uvicorn.run(
@@ -48,9 +52,9 @@ def start_web():
 
 
 if __name__ == "__main__":
-    # Start bot in background thread (daemon so Render can restart gracefully)
+    # Start bot thread
     bot_thread = threading.Thread(target=start_bot_thread, daemon=True)
     bot_thread.start()
 
-    # Start FastAPI on main thread
+    # Start FastAPI
     start_web()
