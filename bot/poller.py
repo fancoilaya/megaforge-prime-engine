@@ -1,29 +1,33 @@
-# bot/poller.py
 import asyncio
 import logging
-from telegram.ext import Application, CommandHandler
 from bot.config import TELEGRAM_TOKEN
-from bot.handlers.generator import handle_grokart
+from bot.handlers.generator import generator_handler
+
+from telegram.ext import Application, CommandHandler
 
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 async def run_bot():
-    app = Application.builder().token(TELEGRAM_TOKEN).build()
+    logger.info("MegaForge Poller: starting...")
+
+    app = (
+        Application.builder()
+        .token(TELEGRAM_TOKEN)
+        .build()
+    )
 
     # Register handlers
-    app.add_handler(CommandHandler("grokposter", handle_grokart))
+    app.add_handler(CommandHandler("grokposter", generator_handler))
 
-    logging.info("MegaForge Poller: running polling...")
-    await app.run_polling(close_loop=False)
+    logger.info("MegaForge Poller: running polling...")
+
+    # This manages its own loop safely when used with asyncio.run()
+    await app.run_polling()
 
 def main():
-    try:
-        loop = asyncio.get_running_loop()
-        # Running inside the same event loop → just schedule the coroutine
-        loop.create_task(run_bot())
-    except RuntimeError:
-        # No running loop → start a new one
-        asyncio.run(run_bot())
+    asyncio.run(run_bot())
+
 
 if __name__ == "__main__":
     main()
