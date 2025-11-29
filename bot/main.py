@@ -4,6 +4,7 @@ import threading
 import logging
 import os
 import uvicorn
+import asyncio
 
 from bot.webserver import app as fastapi_app
 from bot.config import TELEGRAM_BOT_TOKEN
@@ -15,14 +16,23 @@ logging.basicConfig(level=logging.INFO)
 
 
 def start_bot_thread():
-    """Runs the Telegram bot in a separate thread."""
+    """Runs the Telegram bot inside its own event loop in a background thread."""
+    
+    # Create an independent event loop for this thread (REQUIRED for PTB v20+)
+    asyncio.set_event_loop(asyncio.new_event_loop())
+    loop = asyncio.get_event_loop()
+
+    # Build Telegram bot
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
 
-    # Register commands
+    # Register bot commands
     app.add_handler(CommandHandler("grokposter", handle_grokart))
+    app.add_handler(CommandHandler("grokart", handle_grokart))
 
     logging.info("Starting Telegram bot polling in thread...")
-    app.run_polling()   # <-- NOT awaited, blocks ONLY this thread
+
+    # Run PTB inside this thread’s own event loop
+    loop.run_until_complete(app.run_polling())
 
 
 def start_web():
@@ -38,9 +48,9 @@ def start_web():
 
 
 if __name__ == "__main__":
-    # Start bot in background thread
+    # Start bot in background thread (daemon so Render can restart gracefully)
     bot_thread = threading.Thread(target=start_bot_thread, daemon=True)
     bot_thread.start()
 
-    # Start FastAPI in main thread
+    # Start FastAPI on main thread
     start_web()
