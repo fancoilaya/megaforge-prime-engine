@@ -6,7 +6,7 @@ import base64
 from bot.config import STABILITY_API_KEY
 
 def generate_image(prompt: str) -> str:
-    url = "https://api.stability.ai/v2beta/creativity"
+    url = "https://api.stability.ai/v2beta/stable-image/generate/creative"
 
     headers = {
         "Authorization": f"Bearer {STABILITY_API_KEY}",
