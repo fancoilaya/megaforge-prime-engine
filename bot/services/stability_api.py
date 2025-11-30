@@ -7,11 +7,13 @@ from bot.config import STABILITY_API_KEY
 
 
 def generate_image(prompt: str) -> str:
-    url = "https://api.stability.ai/v2beta/image/generate/creative"
+    # ✅ Correct Stability Creative endpoint
+    url = "https://api.stability.ai/v2beta/stable-image/generate/creative"
 
     headers = {
         "Authorization": f"Bearer {STABILITY_API_KEY}",
         "Accept": "application/json",
+        "Content-Type": "application/json",
     }
 
     payload = {
@@ -22,7 +24,6 @@ def generate_image(prompt: str) -> str:
 
     response = requests.post(url, headers=headers, json=payload)
 
-    # If API throws an error, we surface the message
     if response.status_code != 200:
         raise Exception(
             f"Stability API Error {response.status_code}: {response.text}"
@@ -30,9 +31,8 @@ def generate_image(prompt: str) -> str:
 
     data = response.json()
 
-    # Their new API returns images under "images":[{"image":"<base64>"}]
+    # Stability returns base64 under images[0].image
     image_b64 = data["images"][0]["image"]
-
     image_bytes = base64.b64decode(image_b64)
 
     path = f"/tmp/{uuid.uuid4()}.png"
