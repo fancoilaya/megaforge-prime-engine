@@ -20,7 +20,7 @@ def generate_image(prompt: str) -> str:
     # REQUIRED FIELDS per Stability docs
     files = {
         "prompt": (None, prompt),
-        "mode": (None, "prompt"),        # THIS IS REQUIRED
+        "mode": (None, "creative"),        # THIS IS REQUIRED
         "output_format": (None, "png"),
         "aspect_ratio": (None, "1:1")
     }
