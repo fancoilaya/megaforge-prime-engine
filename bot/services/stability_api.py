@@ -8,7 +8,7 @@ from bot.config import STABILITY_API_KEY
 
 def generate_image(prompt: str) -> str:
     # ✅ Correct Stability Creative endpoint
-    url = "https://api.stability.ai/v2beta/stable-image/generate/creative"
+    url = "https://api.stability.ai/v2beta/stable-image/generate/core"
 
     headers = {
         "Authorization": f"Bearer {STABILITY_API_KEY}",
