@@ -16,7 +16,7 @@ logging.basicConfig(
 )
 
 def start_bot_thread():
-    """Run Telegram bot in its own thread with its own event loop."""
+    """Run Telegram bot in its own thread without signal handling."""
     logging.info("Starting Telegram bot...")
 
     app = (
@@ -29,11 +29,11 @@ def start_bot_thread():
 
     logging.info("Bot handlers registered. Running polling...")
 
-    # Create and set event loop for this thread
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    loop.run_until_complete(app.run_polling())
+    # Disable signal handling
+    loop.run_until_complete(app.run_polling(stop_signals=[]))
 
 def start_web():
     """Run FastAPI server on main thread."""
@@ -46,9 +46,7 @@ def start_web():
     )
 
 if __name__ == "__main__":
-    # Start bot on background thread
     bot_thread = threading.Thread(target=start_bot_thread, daemon=True)
     bot_thread.start()
-
-    # Run FastAPI
     start_web()
+
