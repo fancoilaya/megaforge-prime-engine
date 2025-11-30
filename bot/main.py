@@ -1,21 +1,25 @@
 # bot/main.py
 
-import asyncio
+import threading
 import logging
 import os
 from telegram.ext import ApplicationBuilder, CommandHandler
+import uvicorn
 
 from bot.webserver import app as fastapi_app
 from bot.handlers.generator import handle_grokart
 from bot.config import TELEGRAM_BOT_TOKEN
 
-import uvicorn
+logging.basicConfig(
+    level=logging.INFO,
+    format="BOT | %(asctime)s | %(levelname)s | %(message)s"
+)
 
-logging.basicConfig(level=logging.INFO)
 
+def start_bot_thread():
+    """Run Telegram bot in its own thread using its own event loop."""
+    logging.info("Starting Telegram bot...")
 
-async def start_bot():
-    """Start Telegram bot inside the same event loop."""
     app = (
         ApplicationBuilder()
         .token(TELEGRAM_BOT_TOKEN)
@@ -24,35 +28,25 @@ async def start_bot():
 
     app.add_handler(CommandHandler("grokposter", handle_grokart))
 
-    logging.info("Initializing Telegram bot...")
-    await app.initialize()
-    await app.start()
-
-    logging.info("Starting Telegram updater polling...")
-    await app.updater.start_polling()
-
-    logging.info("Bot polling active.")
+    logging.info("Bot handlers registered. Running polling...")
+    app.run_polling()  # BLOCKS only this thread
 
 
-async def start_web():
-    """Run FastAPI with Uvicorn in the shared loop."""
-    config = uvicorn.Config(
+def start_web():
+    """Run FastAPI server on main thread."""
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(
         fastapi_app,
         host="0.0.0.0",
-        port=int(os.getenv("PORT", 8000)),
-        loop="asyncio",
-        lifespan="on"
+        port=port,
+        log_level="info",
     )
-    server = uvicorn.Server(config)
-    await server.serve()
-
-
-async def main():
-    bot_task = asyncio.create_task(start_bot())
-    web_task = asyncio.create_task(start_web())
-
-    await asyncio.gather(bot_task, web_task)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    # Start bot on background thread
+    bot_thread = threading.Thread(target=start_bot_thread, daemon=True)
+    bot_thread.start()
+
+    # Run FastAPI
+    start_web()
