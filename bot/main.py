@@ -27,7 +27,7 @@ async def start_bot():
     logging.info("Starting Telegram bot polling...")
     await app.initialize()
     await app.start()
-    await app.updater.start_polling()  # async
+    await app.run_polling()  # async
     logging.info("Bot polling active.")
 
 
