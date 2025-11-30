@@ -1,8 +1,8 @@
-# bot/main.py
 
 import threading
 import logging
 import os
+import asyncio
 from telegram.ext import ApplicationBuilder, CommandHandler
 import uvicorn
 
@@ -15,9 +15,8 @@ logging.basicConfig(
     format="BOT | %(asctime)s | %(levelname)s | %(message)s"
 )
 
-
 def start_bot_thread():
-    """Run Telegram bot in its own thread using its own event loop."""
+    """Run Telegram bot in its own thread with its own event loop."""
     logging.info("Starting Telegram bot...")
 
     app = (
@@ -29,8 +28,12 @@ def start_bot_thread():
     app.add_handler(CommandHandler("grokposter", handle_grokart))
 
     logging.info("Bot handlers registered. Running polling...")
-    app.run_polling()  # BLOCKS only this thread
 
+    # Create and set event loop for this thread
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    loop.run_until_complete(app.run_polling())
 
 def start_web():
     """Run FastAPI server on main thread."""
@@ -41,7 +44,6 @@ def start_web():
         port=port,
         log_level="info",
     )
-
 
 if __name__ == "__main__":
     # Start bot on background thread
