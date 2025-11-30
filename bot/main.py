@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 async def start_bot():
-    """Run Telegram bot inside the SAME event loop as FastAPI."""
+    """Start Telegram bot inside the same event loop."""
     app = (
         ApplicationBuilder()
         .token(TELEGRAM_BOT_TOKEN)
@@ -24,15 +24,18 @@ async def start_bot():
 
     app.add_handler(CommandHandler("grokposter", handle_grokart))
 
-    logging.info("Starting Telegram bot polling...")
+    logging.info("Initializing Telegram bot...")
     await app.initialize()
     await app.start()
-    await app.run_polling()  # async
+
+    logging.info("Starting Telegram updater polling...")
+    await app.updater.start_polling()
+
     logging.info("Bot polling active.")
 
 
 async def start_web():
-    """Run FastAPI within the same loop."""
+    """Run FastAPI with Uvicorn in the shared loop."""
     config = uvicorn.Config(
         fastapi_app,
         host="0.0.0.0",
@@ -45,14 +48,11 @@ async def start_web():
 
 
 async def main():
-    # Run bot & webserver as async tasks in SAME event loop
     bot_task = asyncio.create_task(start_bot())
     web_task = asyncio.create_task(start_web())
 
-    # Keep them running
     await asyncio.gather(bot_task, web_task)
 
 
 if __name__ == "__main__":
     asyncio.run(main())
-
