@@ -24,21 +24,20 @@ def generate_image(prompt: str) -> str:
 
     response = requests.post(API_URL, headers=headers, files=files)
 
-    # 🔥 PRINT EXACT RESPONSE FOR DEBUGGING
-    print(">>> Stability Raw Response:", response.text)
+    print(">>> Stability Raw Response:", response.text[:500])  # debug
 
     if response.status_code != 200:
-        raise Exception(
-            f"Stability API Error {response.status_code}: {response.text}"
-        )
+        raise Exception(f"Stability API Error {response.status_code}: {response.text}")
 
     data = response.json()
 
-    # Stability returns errors like: {"error": "bad aspect ratio"} or {"message": "..."}
-    if "images" not in data:
-        raise Exception(f"Stability error: missing 'images' in response → {data}")
+    # ----------------------------------------------------
+    # NEW: /core returns {"image": "..."} NOT images[]
+    # ----------------------------------------------------
+    if "image" not in data:
+        raise Exception(f"Stability error: missing 'image' in response → {data}")
 
-    image_b64 = data["images"][0]["image"]
+    image_b64 = data["image"]
     image_bytes = base64.b64decode(image_b64)
 
     # Resize + compress
