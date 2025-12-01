@@ -10,10 +10,6 @@ import io
 
 API_URL = "https://api.stability.ai/v2beta/stable-image/generate/core"
 
-print(">>> Stability module loaded:", __file__)
-print(">>> Using API KEY:", "SET" if STABILITY_API_KEY else "MISSING")
-print(">>> Endpoint:", API_URL)
-
 def generate_image(prompt: str) -> str:
     headers = {
         "Authorization": f"Bearer {STABILITY_API_KEY}",
@@ -28,6 +24,9 @@ def generate_image(prompt: str) -> str:
 
     response = requests.post(API_URL, headers=headers, files=files)
 
+    # 🔥 PRINT EXACT RESPONSE FOR DEBUGGING
+    print(">>> Stability Raw Response:", response.text)
+
     if response.status_code != 200:
         raise Exception(
             f"Stability API Error {response.status_code}: {response.text}"
@@ -35,21 +34,17 @@ def generate_image(prompt: str) -> str:
 
     data = response.json()
 
-    if "images" not in data or len(data["images"]) == 0:
-        raise Exception("Stability error: missing 'images' in response")
+    # Stability returns errors like: {"error": "bad aspect ratio"} or {"message": "..."}
+    if "images" not in data:
+        raise Exception(f"Stability error: missing 'images' in response → {data}")
 
     image_b64 = data["images"][0]["image"]
     image_bytes = base64.b64decode(image_b64)
 
-    # ---------------------------
-    # 🔥 NEW IMAGE COMPRESSION 🔥
-    # ---------------------------
+    # Resize + compress
     img = Image.open(io.BytesIO(image_bytes))
-
-    # Resize max 768x768
     img.thumbnail((768, 768))
 
-    # Convert to JPG (much smaller than PNG)
     output_path = f"/tmp/{uuid.uuid4()}.jpg"
     img.save(output_path, "JPEG", quality=85)
 
