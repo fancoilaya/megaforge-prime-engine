@@ -7,12 +7,14 @@ import uvicorn
 
 from bot.webserver import app as fastapi_app
 from bot.handlers.generator import handle_grokart
+from bot.handlers.admin import cmd_addvip, cmd_removevip, cmd_viplist
 from bot.config import TELEGRAM_BOT_TOKEN
 
 logging.basicConfig(
     level=logging.INFO,
     format="BOT | %(asctime)s | %(levelname)s | %(message)s"
 )
+
 
 def start_bot_thread():
     """Run Telegram bot safely inside its own event loop (Render-safe)."""
@@ -25,18 +27,27 @@ def start_bot_thread():
             .build()
         )
 
+        # --- COMMAND REGISTRATION ---
         app.add_handler(CommandHandler("grokposter", handle_grokart))
+
+        # Admin-only commands
+        app.add_handler(CommandHandler("addvip", cmd_addvip))
+        app.add_handler(CommandHandler("removevip", cmd_removevip))
+        app.add_handler(CommandHandler("viplist", cmd_viplist))
 
         logging.info("Bot handlers registered. Starting polling loop...")
 
+        # Create thread-local event loop
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        # SUPER IMPORTANT: disable ALL signal handling
-        loop.run_until_complete(app.run_polling(
-            allowed_updates=None,
-            stop_signals=[]  # ensures no thread crash
-        ))
+        # Run polling without signals (critical on Render)
+        loop.run_until_complete(
+            app.run_polling(
+                allowed_updates=None,
+                stop_signals=[]  # prevents thread crashes
+            )
+        )
 
     except Exception as e:
         logging.error(f"BOT THREAD CRASHED: {e}")
