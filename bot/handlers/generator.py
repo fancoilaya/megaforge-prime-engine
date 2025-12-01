@@ -19,19 +19,31 @@ async def handle_grokart(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_idea = " ".join(context.args) if context.args else "MegaGrok poster"
 
+    # --------------------------
+    # STYLE INJECTION
+    # --------------------------
     final_prompt = f"""
 {MEGAGROK_STYLE}
 
-User idea: {user_idea}
+IMPORTANT: The image must stay in the MEGAGROK universe.
+Follow this exact illustrated retro-comic style.
+Do NOT render realism or 3D.
+
+USER REQUEST:
+{user_idea}
 """.strip()
 
     # Let user know which generator is used
     if is_vip:
-        await update.message.reply_text("🎨 VIP mode activated — generating high-quality MegaGrok poster...")
+        await update.message.reply_text(
+            "🟢 **VIP Mode Activated**\n"
+            "Generating high-quality MegaGrok poster with Stability AI…"
+        )
     else:
         await update.message.reply_text(
-            "💸 Using FREE fallback generator ()\n"
-            "🔥 Upgrade to VIP for premium quality!"
+            "🟡 **Free Mode Activated**\n"
+            "Using FREE generator (Pollinations)\n"
+            "Upgrade to VIP for premium Stability-powered posters!"
         )
 
     # --------------------------
@@ -51,5 +63,3 @@ User idea: {user_idea}
         if len(msg) > 900:
             msg = msg[:900] + " ... [truncated]"
         await update.message.reply_text(f"❌ Error: {msg}")
-
-
