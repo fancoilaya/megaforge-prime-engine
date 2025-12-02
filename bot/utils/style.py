@@ -1,26 +1,27 @@
 VIP_STYLE = """
-MEGAGROK OFFICIAL POSTER STYLE — ALWAYS APPLY THIS LOOK:
+MAIN SUBJECT (MANDATORY):
+A muscular green anthropomorphic frog superhero named MegaGrok.
+MegaGrok MUST always be the main character in the image.
+MegaGrok MUST always appear exactly as described:
+• Muscular heroic proportions
+• Green frog skin with dark blue shading
+• Large glowing orange eyes
+• Orange/tan chest plates
+• Frog mouth, frog hands, frog feet
+• Red cape optional depending on action
+Never show a human as the main subject. Never replace MegaGrok.
 
-• Retro 1970s monster-comic poster style  
-• Thick black ink outlines, bold cel-shading  
-• Heavy halftone texture, pulp-print roughness  
-• Explosive fiery orange backgrounds  
-• Saturated green skin, orange eyes, orange chest
+ART STYLE:
+Retro 1970s monster-comic poster art.
+Thick black ink outlines, bold cel shading, gritty halftone texture.
+Deep shadows, fiery orange explosive backgrounds.
+No realism, no photographic look, no CGI.
 
-MEGAGROK MUST ALWAYS BE:
-• A muscular anthropomorphic frog superhero  
-• Big heroic proportions, large frog mouth  
-• Glowing orange/amber eyes  
-• Frog hands and frog feet (never human, never claws)  
-• No robots, no mechs, no armor, no sci-fi suit  
-• NEVER a human, monster, creature, lizard, alien, or mech
+WHAT TO AVOID:
+No humans as the main character.
+No robots, armor, mechs, sci-fi.
+No lizards or other creatures.
+MegaGrok must always be the hero.
 
-MANDATORY OUTPUT RULES:
-• MegaGrok MUST be the main character  
-• MUST follow the user’s scene exactly  
-• MUST keep retro comic style  
-• NO additional characters unless user requests  
-• NO text unless user requests
-
-NOW RENDER THE USER'S SCENE CLEARLY:
+RENDER THE FOLLOWING SCENE CLEARLY:
 """
