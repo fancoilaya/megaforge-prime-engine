@@ -4,14 +4,16 @@ from telegram.ext import ContextTypes
 
 from bot.services.stability_api import generate_image
 from bot.services.fallback_api import generate_fallback_image
+
 from bot.utils.vip_manager import load_vip_users
 from bot.utils.style import MEGAGROK_STYLE
+from bot.utils.style_free import MEGAGROK_STYLE_FREE
 
 
 # -------------------------------------------------
 #  MAIN GENERATOR: /grokposter
 #  VIP = Stability AI
-#  NON-VIP = Free fallback
+#  NON-VIP = Free fallback (Pollinations)
 # -------------------------------------------------
 async def handle_grokart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -20,26 +22,24 @@ async def handle_grokart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     vip_users = load_vip_users()
     is_vip = user_id in vip_users
 
-    # User input
+    # User idea
     user_idea = " ".join(context.args) if context.args else "MegaGrok poster"
 
-    # Inject global style
-    final_prompt = f"""
-{MEGAGROK_STYLE}
+    # Pick the correct style
+    style_block = MEGAGROK_STYLE if is_vip else MEGAGROK_STYLE_FREE
 
-User idea: {user_idea}
-""".strip()
+    final_prompt = f"{style_block}\nUser idea: {user_idea}"
 
     # Feedback to user
     if is_vip:
         await update.message.reply_text("🎨 VIP mode — generating ultra-quality MegaGrok poster...")
     else:
         await update.message.reply_text(
-            "🟢 Generating free MegaGrok poster (fallback mode)\n"
-            "🔥 Upgrade to VIP for higher quality."
+            "🟢 Free generator activated — community mode\n"
+            "🔥 VIP gives MUCH higher quality & exact MegaGrok style."
         )
 
-    # Choose generator
+    # Select correct generator
     generator = generate_image if is_vip else generate_fallback_image
 
     try:
@@ -64,13 +64,10 @@ async def handle_grokfree(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_idea = " ".join(context.args) if context.args else "MegaGrok poster"
 
-    final_prompt = f"""
-{MEGAGROK_STYLE}
+    # Force free-friendly shorter style
+    final_prompt = f"{MEGAGROK_STYLE_FREE}\nUser idea: {user_idea}"
 
-User idea: {user_idea}
-""".strip()
-
-    await update.message.reply_text("🟢 Free generator activated — generating MegaGrok poster...")
+    await update.message.reply_text("🟢 Free generator test activated — standby...")
 
     try:
         loop = asyncio.get_event_loop()
