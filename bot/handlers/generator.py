@@ -6,7 +6,7 @@ from bot.services.stability_api import generate_image
 from bot.services.fallback_api import generate_fallback_image
 
 from bot.utils.vip_manager import load_vip_users
-from bot.utils.style_vip import VIP_STYLE
+from bot.utils.style import VIP_STYLE
 from bot.utils.style_free import FREE_STYLE
 
 
