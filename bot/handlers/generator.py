@@ -8,38 +8,43 @@ from bot.utils.vip_manager import load_vip_users
 from bot.utils.style import MEGAGROK_STYLE
 
 
-# ============================
-#   /grokposter  (VIP ONLY)
-# ============================
+# -------------------------------------------------
+#  MAIN GENERATOR: /grokposter
+#  VIP = Stability AI
+#  NON-VIP = Free fallback
+# -------------------------------------------------
 async def handle_grokart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
-    # VIP CHECK
+    # Check VIP list
     vip_users = load_vip_users()
     is_vip = user_id in vip_users
 
-    if not is_vip:
-        return await update.message.reply_text(
-            "⚠️ This command is VIP-only.\n"
-            "You need to hold MegaGrok tokens or be added manually.\n"
-            "🔥 Public free generator is available with /grokfree"
-        )
-
-    # USER IDEA
+    # User input
     user_idea = " ".join(context.args) if context.args else "MegaGrok poster"
 
-    # FINAL STYLE PROMPT
+    # Inject global style
     final_prompt = f"""
 {MEGAGROK_STYLE}
 
 User idea: {user_idea}
 """.strip()
 
-    await update.message.reply_text("🎨 VIP Mode — Generating high-quality MegaGrok poster...")
+    # Feedback to user
+    if is_vip:
+        await update.message.reply_text("🎨 VIP mode — generating ultra-quality MegaGrok poster...")
+    else:
+        await update.message.reply_text(
+            "🟢 Generating free MegaGrok poster (fallback mode)\n"
+            "🔥 Upgrade to VIP for higher quality."
+        )
+
+    # Choose generator
+    generator = generate_image if is_vip else generate_fallback_image
 
     try:
         loop = asyncio.get_event_loop()
-        image_path = await loop.run_in_executor(None, generate_image, final_prompt)
+        image_path = await loop.run_in_executor(None, generator, final_prompt)
 
         with open(image_path, "rb") as img:
             await update.message.reply_photo(photo=img)
@@ -51,10 +56,12 @@ User idea: {user_idea}
         await update.message.reply_text(f"❌ Error: {msg}")
 
 
-# ============================
-#   /grokfree  (OPEN FOR ALL)
-# ============================
+# -------------------------------------------------
+#  FREE TEST COMMAND: /grokfree
+#  Always uses fallback generator
+# -------------------------------------------------
 async def handle_grokfree(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     user_idea = " ".join(context.args) if context.args else "MegaGrok poster"
 
     final_prompt = f"""
@@ -63,10 +70,7 @@ async def handle_grokfree(update: Update, context: ContextTypes.DEFAULT_TYPE):
 User idea: {user_idea}
 """.strip()
 
-    await update.message.reply_text(
-        "🆓 Using FREE fallback generator...\n"
-        "🎨 Creating MegaGrok-style artwork..."
-    )
+    await update.message.reply_text("🟢 Free generator activated — generating MegaGrok poster...")
 
     try:
         loop = asyncio.get_event_loop()
