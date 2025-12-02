@@ -1,6 +1,5 @@
 import requests
 import uuid
-import base64
 import io
 from PIL import Image
 from bot.config import STABILITY_API_KEY
@@ -8,25 +7,36 @@ from bot.config import STABILITY_API_KEY
 API_URL = "https://api.stability.ai/v2beta/stable-image/generate/core"
 
 def generate_image(prompt: str) -> str:
+    """
+    Correct Stability 'core' endpoint implementation.
+    MUST use:
+        files = { "none": "" }
+        data = { "prompt": "...", "output_format": "png" }
+    """
+
     headers = {
         "Authorization": f"Bearer {STABILITY_API_KEY}",
-        "Accept": "image/*"     # ✅ Stability requires image/* or application/json
+        "Accept": "image/*"
     }
 
-    # MUST be multipart/form-data
+    # Required weird Stability form format
     files = {
-        "prompt": (None, prompt)
+        "none": ""
     }
 
-    response = requests.post(API_URL, headers=headers, files=files)
+    data = {
+        "prompt": prompt,
+        "output_format": "png"
+    }
+
+    response = requests.post(API_URL, headers=headers, files=files, data=data)
 
     if response.status_code != 200:
         raise Exception(f"Stability API Error {response.status_code}: {response.text}")
 
-    # Response is binary image (PNG)
+    # Response is a PNG image
     img_bytes = response.content
 
-    # convert → JPEG (smaller for Telegram)
     img = Image.open(io.BytesIO(img_bytes))
     img.thumbnail((768, 768))
 
