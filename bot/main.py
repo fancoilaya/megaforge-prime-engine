@@ -30,25 +30,28 @@ def start_bot_thread():
         # -----------------------------------------------------
         # COMMAND REGISTRATION
         # -----------------------------------------------------
-        app.add_handler(CommandHandler("grokposter", handle_grokart))   # VIP generator
-        app.add_handler(CommandHandler("grokfree", handle_grokfree))     # Free fallback test
+        # Main generator (VIP → Stability, Non-VIP → fallback)
+        app.add_handler(CommandHandler("grokposter", handle_grokart))
 
-        # Admin-only commands
+        # Free generator (always fallback)
+        app.add_handler(CommandHandler("grokfree", handle_grokfree))
+
+        # Admin commands
         app.add_handler(CommandHandler("addvip", cmd_addvip))
         app.add_handler(CommandHandler("removevip", cmd_removevip))
         app.add_handler(CommandHandler("viplist", cmd_viplist))
 
         logging.info("Bot handlers registered. Starting polling loop...")
 
-        # Create thread-local event loop
+        # Create thread-local asyncio loop
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        # Run polling without signals (critical on Render)
+        # Run polling without signals (Render requirement)
         loop.run_until_complete(
             app.run_polling(
                 allowed_updates=None,
-                stop_signals=[]  # prevents thread crashes
+                stop_signals=[]  # Prevents thread crash on Render
             )
         )
 
@@ -57,7 +60,7 @@ def start_bot_thread():
 
 
 def start_web():
-    """Run FastAPI/uvicorn in the main thread (Render requirement)."""
+    """Run FastAPI/Uvicorn in the main thread (Render requirement)."""
     port = int(os.getenv("PORT", 8000))
     logging.info(f"Starting FastAPI server on port {port}")
 
