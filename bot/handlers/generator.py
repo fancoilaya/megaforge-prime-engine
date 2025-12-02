@@ -6,13 +6,13 @@ from bot.services.stability_api import generate_image
 from bot.services.fallback_api import generate_fallback_image
 
 from bot.utils.vip_manager import load_vip_users
-from bot.utils.style import MEGAGROK_STYLE
-from bot.utils.style_free import MEGAGROK_STYLE_FREE
+from bot.utils.style_vip import VIP_STYLE
+from bot.utils.style_free import FREE_STYLE
 
 
 # -------------------------------------------------
 #  MAIN GENERATOR: /grokposter
-#  VIP = Stability AI (with user-idea enforced)
+#  VIP = Stability AI
 #  NON-VIP = Free fallback
 # -------------------------------------------------
 async def handle_grokart(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -22,43 +22,30 @@ async def handle_grokart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     vip_users = load_vip_users()
     is_vip = user_id in vip_users
 
-    # User idea
+    # User idea text
     user_idea = " ".join(context.args) if context.args else "MegaGrok poster"
 
-    # Pick the correct style block
-    style_block = MEGAGROK_STYLE if is_vip else MEGAGROK_STYLE_FREE
+    # Select correct style block
+    style_block = VIP_STYLE if is_vip else FREE_STYLE
 
-    # -------------------------------------------------
-    # FIXED VIP PROMPT — Stability-friendly (no sections/newlines)
-    # -------------------------------------------------
-    if is_vip:
-        final_prompt = (
-            f"{style_block} "
-            f"Scene: {user_idea}. "
-            "Always depict MegaGrok — the muscular green anthropomorphic frog hero "
-            "with glowing orange eyes, fiery retro comic background, heroic stance, "
-            "and bold 1970s comic-book energy. No robots, no mechs, no realism."
-        )
-    else:
-        # Free fallback — Pollinations prefers shorter prompts
-        final_prompt = (
-            f"{MEGAGROK_STYLE_FREE} "
-            f"Scene: {user_idea}. "
-            "Retro comic frog hero, dramatic pose, orange fire background."
-        )
+    # CRITICAL FIX: SCENE FIRST, STYLE LAST
+    final_prompt = f"""
+Scene: {user_idea}
 
-    # Feedback
+Visual Style Guide:
+{style_block}
+""".strip()
+
+    # Feedback to user
     if is_vip:
-        await update.message.reply_text(
-            "🎨 VIP mode — generating ultra-quality MegaGrok poster..."
-        )
+        await update.message.reply_text("🎨 VIP mode — generating ULTRA-quality MegaGrok poster...")
     else:
         await update.message.reply_text(
-            "🟢 Free generator activated — community mode\n"
-            "🔥 VIP gives MUCH higher quality & exact MegaGrok style."
+            "🟢 Free generator activated (community mode)\n"
+            "🔥 VIP unlocks MUCH more accurate MegaGrok posters!"
         )
 
-    # Select generator
+    # Choose generator
     generator = generate_image if is_vip else generate_fallback_image
 
     try:
@@ -77,16 +64,19 @@ async def handle_grokart(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # -------------------------------------------------
 #  FREE TEST COMMAND: /grokfree
+#  Always uses fallback generator
 # -------------------------------------------------
 async def handle_grokfree(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_idea = " ".join(context.args) if context.args else "MegaGrok poster"
 
-    final_prompt = (
-        f"{MEGAGROK_STYLE_FREE} "
-        f"Scene: {user_idea}. "
-        "Retro comic frog hero, dramatic pose, bold ink lines."
-    )
+    # SCENE FIRST for free generator too
+    final_prompt = f"""
+Scene: {user_idea}
+
+Visual Style Guide:
+{FREE_STYLE}
+""".strip()
 
     await update.message.reply_text("🟢 Free generator test activated — standby...")
 
