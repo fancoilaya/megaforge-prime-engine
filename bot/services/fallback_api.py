@@ -43,7 +43,3 @@ def generate_fallback_image(prompt: str) -> str:
         f.write(response.content)
 
     return output_path
-
-        f.write(response.content)
-
-    return output_path
