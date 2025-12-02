@@ -6,7 +6,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler
 import uvicorn
 
 from bot.webserver import app as fastapi_app
-from bot.handlers.generator import handle_grokart
+from bot.handlers.generator import handle_grokart, handle_grokfree
 from bot.handlers.admin import cmd_addvip, cmd_removevip, cmd_viplist
 from bot.config import TELEGRAM_BOT_TOKEN
 
@@ -27,8 +27,11 @@ def start_bot_thread():
             .build()
         )
 
-        # --- COMMAND REGISTRATION ---
-        app.add_handler(CommandHandler("grokposter", handle_grokart))
+        # -----------------------------------------------------
+        # COMMAND REGISTRATION
+        # -----------------------------------------------------
+        app.add_handler(CommandHandler("grokposter", handle_grokart))   # VIP generator
+        app.add_handler(CommandHandler("grokfree", handle_grokfree))     # Free fallback test
 
         # Admin-only commands
         app.add_handler(CommandHandler("addvip", cmd_addvip))
