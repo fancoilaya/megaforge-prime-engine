@@ -1,12 +1,11 @@
-# bot/services/stability_api.py  (FIXED FOR v2 CORE)
+# bot/services/stability_api.py  
+# Correct multipart/form-data implementation for Stability T2I API
 
 import requests
 import uuid
 import base64
-import io
-from PIL import Image
-
 from bot.config import STABILITY_API_KEY
+
 
 API_URL = "https://api.stability.ai/v2beta/stable-image/generate/core"
 
@@ -21,20 +20,18 @@ def generate_image(prompt: str) -> str:
 
     headers = {
         "Authorization": f"Bearer {STABILITY_API_KEY}",
-        "Content-Type": "application/json",
-        "Accept": "application/json"
+        # DO NOT set Content-Type yourself
     }
 
-    payload = {
-        "model": "core",
-        "prompt": {
-            "text": prompt
-        },
-        "aspect_ratio": "1:1",
-        "output_format": "jpeg",
+    files = {
+        "prompt": (None, prompt),
+        "aspect_ratio": (None, "1:1"),
+        "output_format": (None, "jpeg"),
+        # REQUIRED FIX → add strength even for text-only prompts
+        "strength": (None, "1.0"),
     }
 
-    response = requests.post(API_URL, headers=headers, json=payload)
+    response = requests.post(API_URL, headers=headers, files=files)
 
     print("🟧 RAW STATUS CODE:", response.status_code)
     print("🟪 RAW RESPONSE TEXT:")
@@ -45,19 +42,14 @@ def generate_image(prompt: str) -> str:
 
     data = response.json()
 
-    # Stability v2 ALWAYS returns data["image"]
     if "image" not in data:
         raise Exception("Stability error: missing 'image' in response")
 
     image_bytes = base64.b64decode(data["image"])
+    file_path = f"/tmp/{uuid.uuid4()}.jpg"
 
-    img = Image.open(io.BytesIO(image_bytes))
-    img.thumbnail((768,768))
+    with open(file_path, "wb") as f:
+        f.write(image_bytes)
 
-    output_path = f"/tmp/{uuid.uuid4()}.jpg"
-    img.save(output_path, "JPEG", quality=90)
-
-    print("✅ IMAGE GENERATED AT:", output_path)
-    print("==============================\n")
-
-    return output_path
+    print("✅ IMAGE SAVED:", file_path)
+    return file_path
