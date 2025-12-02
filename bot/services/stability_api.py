@@ -1,11 +1,10 @@
-# bot/services/stability_api.py
+# bot/services/stability_api.py  (FIXED FOR v2 CORE)
 
 import requests
 import uuid
 import base64
-import os
-from PIL import Image
 import io
+from PIL import Image
 
 from bot.config import STABILITY_API_KEY
 
@@ -22,41 +21,38 @@ def generate_image(prompt: str) -> str:
 
     headers = {
         "Authorization": f"Bearer {STABILITY_API_KEY}",
-        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Accept": "application/json"
     }
 
-    files = {
-        "prompt": (None, prompt),
-        "output_format": (None, "png"),
-        "aspect_ratio": (None, "1:1"),
+    payload = {
+        "model": "core",
+        "prompt": {
+            "text": prompt
+        },
+        "aspect_ratio": "1:1",
+        "output_format": "jpeg",
     }
 
-    # Actual API request
-    response = requests.post(API_URL, headers=headers, files=files)
+    response = requests.post(API_URL, headers=headers, json=payload)
 
     print("🟧 RAW STATUS CODE:", response.status_code)
     print("🟪 RAW RESPONSE TEXT:")
-    print(response.text[:1000])  # prevent huge logs
+    print(response.text[:1000])
 
     if response.status_code != 200:
         raise Exception(f"Stability API Error {response.status_code}: {response.text}")
 
-    # Extract image
     data = response.json()
 
-    if "image" in data:
-        # New endpoint format
-        image_b64 = data["image"]
-    elif "images" in data and len(data["images"]) > 0:
-        image_b64 = data["images"][0]["image"]
-    else:
-        raise Exception("Stability error: missing 'image' or 'images' in response")
+    # Stability v2 ALWAYS returns data["image"]
+    if "image" not in data:
+        raise Exception("Stability error: missing 'image' in response")
 
-    image_bytes = base64.b64decode(image_b64)
+    image_bytes = base64.b64decode(data["image"])
 
-    # Convert & compress to JPG
     img = Image.open(io.BytesIO(image_bytes))
-    img.thumbnail((768, 768))
+    img.thumbnail((768,768))
 
     output_path = f"/tmp/{uuid.uuid4()}.jpg"
     img.save(output_path, "JPEG", quality=90)
