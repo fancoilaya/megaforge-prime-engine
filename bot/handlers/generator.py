@@ -4,16 +4,11 @@ from telegram.ext import ContextTypes
 
 from bot.services.stability_api import generate_image
 from bot.services.fallback_api import generate_fallback_image
-
 from bot.utils.vip_manager import load_vip_users
-from bot.utils.style import VIP_STYLE
-from bot.utils.style_free import FREE_STYLE
 
 
 # ================================================================
-#  MAIN GENERATOR: /grokposter
-#  VIP = Stability AI
-#  NON-VIP = Free fallback
+#  MAIN GENERATOR: /grokposter (PURE DEBUG)
 # ================================================================
 async def handle_grokart(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -21,40 +16,23 @@ async def handle_grokart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     vip_users = load_vip_users()
     is_vip = user_id in vip_users
 
-    # User text
-    user_idea = " ".join(context.args) if context.args else "doing something epic"
+    user_idea = " ".join(context.args) if context.args else "MegaGrok poster"
 
-    # Style block (soft influence only)
-    style_block = VIP_STYLE if is_vip else FREE_STYLE
+    # 🔥 ONLY THIS STRING IS SENT. NOTHING ELSE.
+    final_prompt = f"MegaGrok frog superhero. Scene: {user_idea}"
 
-    # =======================================================
-    # MAIN FIX: Stability interprets a single strong sentence
-    # =======================================================
-    final_prompt = (
-        f"A retro comic-book illustration of MegaGrok, a muscular green frog "
-        f"superhero with glowing orange eyes, {user_idea}. "
-        f"Bold line art, dynamic pose, vintage print texture.\n\n"
-        f"STYLE NOTES:\n{style_block}"
-    )
-
-    # User feedback
+    # Notify user
     if is_vip:
-        await update.message.reply_text("🎨 VIP Mode: Generating Ultra-Quality MegaGrok Poster…")
+        await update.message.reply_text("🎨 VIP DEBUG MODE — Testing user idea ONLY")
     else:
-        await update.message.reply_text(
-            "🟢 Free Mode Active — Community generator\n"
-            "🔥 VIP unlocks higher style accuracy."
-        )
+        await update.message.reply_text("🟢 FREE DEBUG MODE — Testing user idea ONLY")
 
-    # Select engine
     generator = generate_image if is_vip else generate_fallback_image
 
-    # Debug display
-    print("\n==============================")
-    print("🟦 FINAL PROMPT SENT TO ENGINE")
-    print("==============================")
+    # Debug log
+    print("\n========== DEBUG PROMPT (VIP)" if is_vip else "========== DEBUG PROMPT (FREE)")
     print(final_prompt)
-    print("==============================\n")
+    print("=========================================\n")
 
     try:
         loop = asyncio.get_event_loop()
@@ -64,32 +42,23 @@ async def handle_grokart(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_photo(photo=img)
 
     except Exception as e:
-        msg = str(e)
-        if len(msg) > 900:
-            msg = msg[:900] + " ... [truncated]"
-        await update.message.reply_text(f"❌ Error: {msg}")
+        await update.message.reply_text(f"❌ Error: {str(e)}")
 
 
 # ================================================================
-#  FREE TEST COMMAND: /grokfree
+#  FREE TEST COMMAND
 # ================================================================
 async def handle_grokfree(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    user_idea = " ".join(context.args) if context.args else "doing something heroic"
+    user_idea = " ".join(context.args) if context.args else "MegaGrok poster"
 
-    final_prompt = (
-        f"A retro comic-style drawing of MegaGrok, the heroic frog, {user_idea}. "
-        f"Bold ink lines, energetic pose.\n\n"
-        f"{FREE_STYLE}"
-    )
+    final_prompt = f"MegaGrok frog superhero. Scene: {user_idea}"
 
-    await update.message.reply_text("🟢 Free Generator Test — Standby...")
+    await update.message.reply_text("🟢 Free DEBUG — user input only")
 
-    print("\n==============================")
-    print("🟦 FREE MODE PROMPT")
-    print("==============================")
+    print("\n========== DEBUG FREE PROMPT ==========")
     print(final_prompt)
-    print("==============================\n")
+    print("=========================================\n")
 
     try:
         loop = asyncio.get_event_loop()
@@ -99,7 +68,4 @@ async def handle_grokfree(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_photo(photo=img)
 
     except Exception as e:
-        msg = str(e)
-        if len(msg) > 900:
-            msg = msg[:900] + " ... [truncated]"
-        await update.message.reply_text(f"❌ Error: {msg}")
+        await update.message.reply_text(f"❌ Error: {str(e)}")
