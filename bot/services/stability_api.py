@@ -1,3 +1,5 @@
+# bot/services/stability_api.py
+
 import requests
 import uuid
 import io
@@ -6,74 +8,56 @@ from bot.config import STABILITY_API_KEY
 
 API_URL = "https://api.stability.ai/v2beta/stable-image/generate/core"
 
-DEBUG_MODE = True  # 🔥 Turn on/off Stability debug logging
-
-
-def debug_print(msg: str):
-    """Print debug messages in Render logs."""
-    if DEBUG_MODE:
-        print("\n================ STABILITY DEBUG ================")
-        print(msg)
-        print("=================================================\n")
-
 
 def generate_image(prompt: str) -> str:
     """
-    Correct Stability CORE endpoint using:
-        files = { "none": "" }
-        data  = { prompt, output_format }
+    Sends a correct multipart/form-data image generation request
+    to Stability AI using the v2beta core endpoint.
     """
 
-    # -------------------------
-    # 🔥 DEBUG: Print final prompt
-    # -------------------------
-    debug_print(f"FINAL PROMPT SENT TO STABILITY:\n{prompt}")
-
+    # ----- HEADERS -----
     headers = {
         "Authorization": f"Bearer {STABILITY_API_KEY}",
-        "Accept": "image/*"  # MUST be image/*
+        "Accept": "image/*",  # Stability requires image/* or application/json
     }
 
-    # Required weird multipart field
-    files = {
-        "none": ""
-    }
-
+    # ----- FORM FIELDS -----
     data = {
         "prompt": prompt,
-        "output_format": "png"
+        "aspect_ratio": "1:1",
+        "output_format": "png",
+        # You CAN add:
+        # "negative_prompt": "...",
+        # "style_preset": "comic-book",
+        # "seed": "0",
     }
 
-    # -------------------------
-    # 🔥 DEBUG: Print outgoing request info
-    # -------------------------
-    debug_print(
-        f"SENDING REQUEST TO: {API_URL}\n\n"
-        f"HEADERS:\n{headers}\n\n"
-        f"FILES:\n{files}\n\n"
-        f"DATA:\n{data}\n"
-    )
+    # ----- REQUIRED TRICK -----
+    # Stability requires *at least one file* in the multipart request.
+    # They suggest sending a dummy form part:
+    files = {"none": ("", "")}
 
-    response = requests.post(API_URL, headers=headers, files=files, data=data)
+    print("\n===== STABILITY REQUEST DEBUG =====")
+    print("URL:", API_URL)
+    print("HEADERS:", headers)
+    print("DATA:", data)
+    print("FILES:", files)
+    print("===================================\n")
 
-    # -------------------------
-    # 🔥 DEBUG: Log status + text
-    # -------------------------
-    txt = response.text[:500] if response.text else "<no text>"
-    debug_print(f"STATUS: {response.status_code}\nRESPONSE BODY (first 500 chars):\n{txt}")
+    response = requests.post(API_URL, headers=headers, data=data, files=files)
 
+    # If error:
     if response.status_code != 200:
         raise Exception(f"Stability API Error {response.status_code}: {response.text}")
 
-    # Response is PNG
+    # Process returned image (PNG)
     img_bytes = response.content
-
     img = Image.open(io.BytesIO(img_bytes))
+
+    # Resize for Telegram
     img.thumbnail((768, 768))
 
     output_path = f"/tmp/{uuid.uuid4()}.jpg"
-    img.save(output_path, "JPEG", quality=90)
-
-    debug_print(f"IMAGE SAVED TO: {output_path}")
+    img.save(output_path, "JPEG", quality=95)
 
     return output_path
