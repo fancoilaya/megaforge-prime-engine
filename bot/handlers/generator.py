@@ -5,10 +5,12 @@ from telegram.ext import ContextTypes
 from bot.services.stability_api import generate_image
 from bot.services.fallback_api import generate_fallback_image
 from bot.utils.vip_manager import load_vip_users
+from bot.utils.style_free import FREE_STYLE
 
 
 # ================================================================
-#  MAIN GENERATOR: /grokposter (PURE DEBUG)
+#  MAIN GENERATOR: /grokposter
+#  VIP = Stability (keep minimal prompt!)
 # ================================================================
 async def handle_grokart(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -18,21 +20,25 @@ async def handle_grokart(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_idea = " ".join(context.args) if context.args else "MegaGrok poster"
 
-    # 🔥 ONLY THIS STRING IS SENT. NOTHING ELSE.
-    final_prompt = f"MegaGrok frog superhero. Scene: {user_idea}"
+    if is_vip:
+        # ⭐ VIP MUST stay minimal or Stability ignores user input
+        final_prompt = f"MegaGrok frog superhero. Scene: {user_idea}"
+    else:
+        # ⭐ FREE MODE gets tuned style + user idea
+        final_prompt = f"{FREE_STYLE}\nScene: {user_idea}"
 
     # Notify user
-    if is_vip:
-        await update.message.reply_text("🎨 VIP DEBUG MODE — Testing user idea ONLY")
-    else:
-        await update.message.reply_text("🟢 FREE DEBUG MODE — Testing user idea ONLY")
+    await update.message.reply_text(
+        "🎨 VIP MODE — Testing action…" if is_vip else
+        "🟢 Free Mode — Comic Poster Style Active"
+    )
 
     generator = generate_image if is_vip else generate_fallback_image
 
     # Debug log
-    print("\n========== DEBUG PROMPT (VIP)" if is_vip else "========== DEBUG PROMPT (FREE)")
+    print("\n========== PROMPT SENT ==========")
     print(final_prompt)
-    print("=========================================\n")
+    print("=================================\n")
 
     try:
         loop = asyncio.get_event_loop()
@@ -46,19 +52,19 @@ async def handle_grokart(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ================================================================
-#  FREE TEST COMMAND
+#  FREE TEST COMMAND /grokfree
 # ================================================================
 async def handle_grokfree(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_idea = " ".join(context.args) if context.args else "MegaGrok poster"
 
-    final_prompt = f"MegaGrok frog superhero. Scene: {user_idea}"
+    final_prompt = f"{FREE_STYLE}\nScene: {user_idea}"
 
-    await update.message.reply_text("🟢 Free DEBUG — user input only")
+    await update.message.reply_text("🟢 Free Generator Test — Standby...")
 
-    print("\n========== DEBUG FREE PROMPT ==========")
+    print("\n========== FREE MODE PROMPT ==========")
     print(final_prompt)
-    print("=========================================\n")
+    print("======================================\n")
 
     try:
         loop = asyncio.get_event_loop()
