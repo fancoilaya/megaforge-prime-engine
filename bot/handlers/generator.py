@@ -6,12 +6,14 @@ from bot.services.stability_api import generate_image
 from bot.services.fallback_api import generate_fallback_image
 
 from bot.utils.vip_manager import load_vip_users
+from bot.utils.style import VIP_STYLE
+from bot.utils.style_free import FREE_STYLE
 
 
 # ================================================================
 #  MAIN GENERATOR: /grokposter
-#  VIP = Stability AI (comic-book style)
-#  NON-VIP = Free fallback (Pollinations)
+#  VIP = Stability AI
+#  NON-VIP = Free fallback
 # ================================================================
 async def handle_grokart(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -19,46 +21,45 @@ async def handle_grokart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     vip_users = load_vip_users()
     is_vip = user_id in vip_users
 
-    # User-provided idea
-    user_idea = " ".join(context.args) if context.args else "MegaGrok poster"
+    # User text
+    user_idea = " ".join(context.args) if context.args else "doing something epic"
 
-    # ✨ Ultra-clean prompt to avoid overriding user input
-    if is_vip:
-        final_prompt = (
-            "MegaGrok – a muscular green anthropomorphic frog superhero with glowing orange eyes, "
-            "heroic proportions, frog hands and frog feet. Retro 1970s comic-book poster style. "
-            f"Scene: {user_idea}"
-        )
-    else:
-        final_prompt = (
-            f"MegaGrok frog superhero in comic style. Scene: {user_idea}"
-        )
+    # Style block (soft influence only)
+    style_block = VIP_STYLE if is_vip else FREE_STYLE
 
-    # Telegram user feedback
+    # =======================================================
+    # MAIN FIX: Stability interprets a single strong sentence
+    # =======================================================
+    final_prompt = (
+        f"A retro comic-book illustration of MegaGrok, a muscular green frog "
+        f"superhero with glowing orange eyes, {user_idea}. "
+        f"Bold line art, dynamic pose, vintage print texture.\n\n"
+        f"STYLE NOTES:\n{style_block}"
+    )
+
+    # User feedback
     if is_vip:
         await update.message.reply_text("🎨 VIP Mode: Generating Ultra-Quality MegaGrok Poster…")
     else:
         await update.message.reply_text(
-            "🟢 Free Mode Active — Using community generator\n"
-            "🔥 VIP unlocks perfect style accuracy."
+            "🟢 Free Mode Active — Community generator\n"
+            "🔥 VIP unlocks higher style accuracy."
         )
 
-    # Pick generator
+    # Select engine
     generator = generate_image if is_vip else generate_fallback_image
 
-    # Debug print → appears in Render logs
+    # Debug display
     print("\n==============================")
-    print("🟦 FINAL PROMPT SENT")
+    print("🟦 FINAL PROMPT SENT TO ENGINE")
     print("==============================")
     print(final_prompt)
     print("==============================\n")
 
     try:
-        # Run blocking API call in threadpool
         loop = asyncio.get_event_loop()
         image_path = await loop.run_in_executor(None, generator, final_prompt)
 
-        # Send image to Telegram
         with open(image_path, "rb") as img:
             await update.message.reply_photo(photo=img)
 
@@ -74,10 +75,12 @@ async def handle_grokart(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ================================================================
 async def handle_grokfree(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    user_idea = " ".join(context.args) if context.args else "MegaGrok poster"
+    user_idea = " ".join(context.args) if context.args else "doing something heroic"
 
     final_prompt = (
-        f"MegaGrok frog superhero comic style. Scene: {user_idea}"
+        f"A retro comic-style drawing of MegaGrok, the heroic frog, {user_idea}. "
+        f"Bold ink lines, energetic pose.\n\n"
+        f"{FREE_STYLE}"
     )
 
     await update.message.reply_text("🟢 Free Generator Test — Standby...")
