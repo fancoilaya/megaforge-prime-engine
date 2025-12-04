@@ -35,7 +35,7 @@ def generate_image(prompt: str) -> str:
         "prompt": prompt,
         "output_format": "png",     # png → best detail
         "aspect_ratio": "1:1",      # stable and predictable
-        # "style_preset": "comic-book",  # optional preset
+        "style_preset": "comic-book",  # optional preset
         # "seed": 0,                    # optional
     }
 
