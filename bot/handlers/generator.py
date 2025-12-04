@@ -24,30 +24,25 @@ async def handle_grokart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # User text
     user_idea = " ".join(context.args) if context.args else "MegaGrok poster"
 
-    # Select style
+    # Choose style
     style_block = VIP_STYLE if is_vip else FREE_STYLE
 
-    # Stability-friendly sandwich format (MANDATORY)
+    # Clean corrected final prompt
     final_prompt = f"""
-MAIN SUBJECT (MANDATORY):
-A muscular green anthropomorphic frog superhero named MegaGrok.
-MegaGrok MUST always be the main character in the image.
-MegaGrok MUST always appear exactly as described:
-• Muscular heroic proportions
-• Green frog skin with dark blue shading
-• Large glowing orange eyes
-• Orange/tan chest plates
-• Frog mouth, frog hands, frog feet
-Never show a human as the main subject.
-Never replace MegaGrok.
+MAIN CHARACTER:
+MegaGrok — a muscular green anthropomorphic frog superhero.
+Always depicted with heroic proportions, glowing orange eyes,
+orange/tan torso plates, frog mouth, frog hands, frog feet.
+MegaGrok must ALWAYS be the main subject.
 
+STYLE:
 {style_block}
 
-RENDER THE FOLLOWING SCENE CLEARLY:
+SCENE TO RENDER:
 {user_idea}
 """.strip()
 
-    # Notify user
+    # User feedback
     if is_vip:
         await update.message.reply_text("🎨 VIP Mode: Generating Ultra-Quality MegaGrok Poster…")
     else:
@@ -56,12 +51,12 @@ RENDER THE FOLLOWING SCENE CLEARLY:
             "🔥 VIP unlocks perfect style accuracy."
         )
 
-    # Pick engine
+    # Generator function
     generator = generate_image if is_vip else generate_fallback_image
 
-    # Debug print for Render logs
+    # Debug log
     print("\n==============================")
-    print("🟦 FINAL PROMPT USED")
+    print("🟦 FINAL PROMPT USED (VIP)" if is_vip else "🟦 FINAL PROMPT USED (FREE)")
     print("==============================")
     print(final_prompt)
     print("==============================\n")
@@ -82,17 +77,16 @@ RENDER THE FOLLOWING SCENE CLEARLY:
 
 # ================================================================
 #  FREE TEST COMMAND: /grokfree
-#  Always uses fallback engine + free style block
 # ================================================================
 async def handle_grokfree(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_idea = " ".join(context.args) if context.args else "MegaGrok poster"
 
     final_prompt = f"""
-MAIN SUBJECT (MANDATORY):
-A muscular green anthropomorphic frog superhero named MegaGrok.
-MegaGrok MUST appear as the hero and never be replaced.
+MAIN CHARACTER:
+MegaGrok — always the hero.
 
+STYLE (Free Mode):
 {FREE_STYLE}
 
 SCENE:
@@ -101,7 +95,6 @@ SCENE:
 
     await update.message.reply_text("🟢 Free Generator Test — Standby...")
 
-    # Debug logging
     print("\n==============================")
     print("🟦 FREE MODE PROMPT")
     print("==============================")
