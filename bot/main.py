@@ -1,4 +1,5 @@
 # bot/main.py
+
 import threading
 import logging
 import os
@@ -19,59 +20,58 @@ logging.basicConfig(
 
 
 def start_bot_thread():
-    """Run Telegram bot safely inside its own event loop (Render-safe)."""
+    """Runs Telegram bot safely in its own event loop."""
     try:
         logging.info("Starting Telegram bot thread...")
 
-        # build the application
         app = (
             ApplicationBuilder()
             .token(TELEGRAM_BOT_TOKEN)
             .build()
         )
 
-        # -----------------------------------------------------
-        # COMMAND REGISTRATION (mirror your existing file)
-        # -----------------------------------------------------
+        # -------------------------------------------------
+        # REGISTER COMMANDS
+        # -------------------------------------------------
         app.add_handler(CommandHandler("grokposter", handle_grokart))
         app.add_handler(CommandHandler("grokfree", handle_grokfree))
         app.add_handler(CommandHandler("addvip", cmd_addvip))
         app.add_handler(CommandHandler("removevip", cmd_removevip))
         app.add_handler(CommandHandler("viplist", cmd_viplist))
 
-        logging.info("Bot handlers registered. Preparing event loop for thread...")
+        logging.info("Bot handlers registered.")
 
-        # Create thread-local asyncio loop
+        # Thread-local event loop (REQUIRED on Render!)
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        # Run polling inside thread and log any exceptions that happen
         try:
-            logging.info("Starting polling (thread-local loop).")
+            logging.info("Polling started inside thread.")
             loop.run_until_complete(
                 app.run_polling(
                     allowed_updates=None,
-                    stop_signals=[]  # prevents thread crashes on Render
+                    stop_signals=[]  # prevents Render from killing the thread
                 )
             )
-            logging.info("Polling finished (clean stop).")
-        except Exception as inner_exc:
-            logging.error("Exception inside bot polling loop:\n" + "".join(traceback.format_exception(inner_exc)))
+        except Exception as exc:
+            logging.error("Bot polling crashed:\n" + "".join(traceback.format_exception(exc)))
+
         finally:
-            # Best-effort shutdown sequence
+            # Safe shutdown
             try:
                 loop.run_until_complete(app.stop())
                 loop.run_until_complete(app.shutdown())
             except Exception:
-                logging.exception("Error during bot shutdown cleanup.")
-            logging.info("Bot thread exiting.")
+                logging.exception("Error during Telegram bot shutdown cleanup.")
+
+            logging.info("Bot thread exited.")
 
     except Exception as e:
-        logging.error("BOT THREAD CRASHED at startup:\n" + "".join(traceback.format_exception(e)))
+        logging.error("BOT THREAD FAILED AT STARTUP:\n" + "".join(traceback.format_exception(e)))
 
 
 def start_web():
-    """Run FastAPI/Uvicorn in the main thread (Render requirement)."""
+    """Runs FastAPI on main thread (Render requires this)."""
     port = int(os.getenv("PORT", 8000))
     logging.info(f"Starting FastAPI server on port {port}")
 
@@ -80,20 +80,24 @@ def start_web():
         host="0.0.0.0",
         port=port,
         log_level="info",
-        timeout_keep_alive=60  # a bit higher keep-alive for long requests
+        timeout_keep_alive=90  # Gives model enough time
     )
 
 
 if __name__ == "__main__":
-    # Quick preflight checks
+
     if not TELEGRAM_BOT_TOKEN:
-        logging.error("TELEGRAM_BOT_TOKEN is not set. Exiting.")
-        raise SystemExit("Missing TELEGRAM_BOT_TOKEN")
+        logging.error("Missing TELEGRAM_BOT_TOKEN — exiting.")
+        raise SystemExit
 
-    # Start Telegram bot in background daemon thread
-    bot_thread = threading.Thread(target=start_bot_thread, daemon=True, name="telegram-bot-thread")
+    # Start bot thread
+    bot_thread = threading.Thread(
+        target=start_bot_thread,
+        daemon=True,
+        name="tg-bot-thread"
+    )
     bot_thread.start()
-    logging.info("Bot thread started (daemon).")
+    logging.info("Telegram bot thread started.")
 
-    # Start FastAPI in main thread (blocking)
+    # Start FastAPI
     start_web()
