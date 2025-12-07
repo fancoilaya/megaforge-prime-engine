@@ -23,7 +23,7 @@ def generate_fallback_image(prompt: str) -> str:
 
     print("Fallback request:", url)
 
-    response = requests.get(url, timeout=40)
+    response = requests.get(url, timeout=90)
 
     if response.status_code != 200:
         raise Exception(f"Fallback generator error {response.status_code}")
