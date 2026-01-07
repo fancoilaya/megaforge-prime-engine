@@ -7,6 +7,7 @@ import asyncio
 import requests
 from enum import Enum, auto
 from typing import Dict, Any
+import os
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
@@ -14,10 +15,9 @@ from telegram.ext import ContextTypes
 from bot.services.fallback_api import generate_fallback_image
 from bot.services.stability_api import generate_image
 from bot.config import VIP_SERVICE_URL
-import os
 
 # ------------------------------------------------------------------
-# LOGGING (VERY IMPORTANT FOR AUTO-LOADER DEBUGGING)
+# LOGGING
 # ------------------------------------------------------------------
 
 logging.info("📦 Loading megaforge_ui handler module")
@@ -127,17 +127,28 @@ async def handle_megaforge_callback(update: Update, context: ContextTypes.DEFAUL
 
     if query.data == "mf_exit":
         session["state"] = ForgeState.EXIT
-        await query.edit_message_text("🧱 MegaForge closed.")
+        try:
+            await query.edit_message_text("🧱 MegaForge closed.")
+        except Exception:
+            await query.message.reply_text("🧱 MegaForge closed.")
         return
 
     if query.data == "mf_image":
         session["state"] = ForgeState.IMAGE_INPUT
-        await query.edit_message_text(
-            "🎨 **IMAGE FORGE**\n\n"
-            "Describe what MegaGrok is doing.\n"
-            "Comic style is always applied.",
-            parse_mode="Markdown"
-        )
+        try:
+            await query.edit_message_text(
+                "🎨 **IMAGE FORGE**\n\n"
+                "Describe what MegaGrok is doing.\n"
+                "Comic style is always applied.",
+                parse_mode="Markdown"
+            )
+        except Exception:
+            await query.message.reply_text(
+                "🎨 **IMAGE FORGE**\n\n"
+                "Describe what MegaGrok is doing.\n"
+                "Comic style is always applied.",
+                parse_mode="Markdown"
+            )
         return
 
     if query.data == "mf_chaos":
@@ -146,20 +157,35 @@ async def handle_megaforge_callback(update: Update, context: ContextTypes.DEFAUL
 
     if query.data == "mf_vip":
         if not session["is_vip"]:
-            await query.edit_message_text(
-                "🔒 **VIP FORGE LOCKED**\n\n"
-                "Hold the MegaGrok token to unlock.\n"
-                "Wallet linking happens privately.",
-                parse_mode="Markdown"
-            )
+            try:
+                await query.edit_message_text(
+                    "🔒 **VIP FORGE LOCKED**\n\n"
+                    "Hold the MegaGrok token to unlock.\n"
+                    "Wallet linking happens privately.",
+                    parse_mode="Markdown"
+                )
+            except Exception:
+                await query.message.reply_text(
+                    "🔒 **VIP FORGE LOCKED**\n\n"
+                    "Hold the MegaGrok token to unlock.\n"
+                    "Wallet linking happens privately.",
+                    parse_mode="Markdown"
+                )
             return
 
-        await query.edit_message_text(
-            "✨ **VIP FORGE**\n\n"
-            "Advanced generation enabled.",
-            reply_markup=main_menu(True),
-            parse_mode="Markdown"
-        )
+        try:
+            await query.edit_message_text(
+                "✨ **VIP FORGE**\n\n"
+                "Advanced generation enabled.",
+                reply_markup=main_menu(True),
+                parse_mode="Markdown"
+            )
+        except Exception:
+            await query.message.reply_text(
+                "✨ **VIP FORGE**\n\nAdvanced generation enabled.",
+                reply_markup=main_menu(True),
+                parse_mode="Markdown"
+            )
         return
 
 # ------------------------------------------------------------------
@@ -177,25 +203,31 @@ async def handle_megaforge_text(update: Update, context: ContextTypes.DEFAULT_TY
     await run_generation(update, session, prompt)
 
 # ------------------------------------------------------------------
-# GENERATION CORE
+# GENERATION CORE (SAFE EDIT FALLBACK)
 # ------------------------------------------------------------------
 
 async def run_generation(source, session: Dict[str, Any], prompt: str):
     remaining = cooldown_remaining(session)
     if remaining > 0:
         msg = f"⏳ Cooldown active: {remaining}s remaining"
-        if hasattr(source, "edit_message_text"):
-            await source.edit_message_text(msg)
-        else:
+        try:
+            if hasattr(source, "edit_message_text"):
+                await source.edit_message_text(msg)
+            else:
+                await source.message.reply_text(msg)
+        except Exception:
             await source.message.reply_text(msg)
         return
 
     generator = generate_image if session["is_vip"] else generate_fallback_image
     final_prompt = f"MegaGrok comic book style. {prompt}"
 
-    if hasattr(source, "edit_message_text"):
-        await source.edit_message_text("🧨 Forging...")
-    else:
+    try:
+        if hasattr(source, "edit_message_text"):
+            await source.edit_message_text("🧨 Forging...")
+        else:
+            await source.message.reply_text("🧨 Forging...")
+    except Exception:
         await source.message.reply_text("🧨 Forging...")
 
     loop = asyncio.get_event_loop()
@@ -224,7 +256,7 @@ def random_chaos_prompt() -> str:
     return f"MegaGrok in a {random.choice(chaos)}"
 
 # ------------------------------------------------------------------
-# HANDLER REGISTRATION (CRITICAL)
+# HANDLER REGISTRATION (REQUIRED)
 # ------------------------------------------------------------------
 
 from telegram.ext import (
