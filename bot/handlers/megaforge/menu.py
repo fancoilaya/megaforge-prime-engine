@@ -1,13 +1,25 @@
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+from bot.config import VIP_SERVICE_URL
 
 def main_menu(is_vip: bool):
-    return InlineKeyboardMarkup([
+    rows = [
         [InlineKeyboardButton("🖼 Image Forge", callback_data="mf_image")],
         [InlineKeyboardButton("😈 Meme Forge 🔒", callback_data="mf_meme")],
         [InlineKeyboardButton("🧩 Sticker Forge 🔒", callback_data="mf_sticker")],
         [InlineKeyboardButton("🎛 Presets 🔒", callback_data="mf_presets")],
-        [InlineKeyboardButton("❌ Exit", callback_data="mf_exit")],
-    ])
+    ]
+
+    if not is_vip:
+        rows.append([
+            InlineKeyboardButton(
+                "🔗 Link Wallet (Enable VIP)",
+                url=f"{VIP_SERVICE_URL}/link"
+            )
+        ])
+
+    rows.append([InlineKeyboardButton("❌ Exit", callback_data="mf_exit")])
+
+    return InlineKeyboardMarkup(rows)
 
 def vip_locked_message() -> str:
     return (
@@ -18,5 +30,18 @@ def vip_locked_message() -> str:
         "• Faster cooldowns\n"
         "• Meme & Sticker Forge\n"
         "• Presets & future tools\n\n"
-        "[ 🔗 Link Wallet to Enable VIP ]"
+        "👇 Enable VIP below"
     )
+
+def vip_locked_keyboard():
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                "🔗 Link Wallet (Enable VIP)",
+                url=f"{VIP_SERVICE_URL}/link"
+            )
+        ],
+        [
+            InlineKeyboardButton("⬅ Back to Forge", callback_data="mf_back")
+        ]
+    ])
