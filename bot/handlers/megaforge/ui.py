@@ -6,10 +6,10 @@ from telegram.ext import ContextTypes
 from .sessions import get_session, ForgeState
 from .vip import check_vip_status
 from .cooldowns import image_cooldown_remaining
-from .menu import main_menu, vip_locked_message
+from .menu import main_menu, vip_locked_message, vip_locked_keyboard
 from .generators import generate_image_for_session
 
-logging.info("📦 Loading MegaForge UI module")
+logging.info("📦 Loading MegaForge UI module (wallet-link enabled)")
 
 async def safe_reply(source, text, **kwargs):
     try:
@@ -61,6 +61,15 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await safe_reply(query, "🧱 MegaForge closed.")
         return
 
+    if query.data == "mf_back":
+        session["state"] = ForgeState.MAIN_MENU
+        await safe_reply(
+            query,
+            "🔙 Back to MegaForge",
+            reply_markup=main_menu(session["is_vip"])
+        )
+        return
+
     if query.data == "mf_image":
         session["state"] = ForgeState.IMAGE_INPUT
         await safe_reply(
@@ -74,7 +83,12 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if query.data in ("mf_meme", "mf_sticker", "mf_presets"):
         if not session["is_vip"]:
-            await safe_reply(query, vip_locked_message(), parse_mode="Markdown")
+            await safe_reply(
+                query,
+                vip_locked_message(),
+                reply_markup=vip_locked_keyboard(),
+                parse_mode="Markdown"
+            )
             return
 
         await safe_reply(query, "✨ VIP forge coming online soon.")
