@@ -10,7 +10,8 @@
 # - Stability generator
 #
 # This file is intentionally explicit and readable.
-
+import logging
+logging.info("📦 Loading megaforge_ui handler module")
 import time
 import random
 import asyncio
