@@ -1,14 +1,14 @@
 from telegram import Update
-from telegram.ext import ContextTypes, CommandHandler, CallbackQueryHandler, MessageHandler, filters
+from telegram.ext import ContextTypes
 
 from .menu import main_menu
 from .cooldowns import image_cooldown_remaining, mark_image_used
 from .vip import get_vip_status
-from .generators import generate_image, generate_surprise_image
+from .generators import generate_image
 
 
 # ---------------------------------------------------------
-# ENTRY POINT: /megaforge
+# /megaforge ENTRY
 # ---------------------------------------------------------
 
 async def handle_megaforge(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -39,52 +39,47 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     data = query.data
 
-    # Cooldown active → block ALL image actions
+    # BLOCK ALL IMAGE ACTIONS ON COOLDOWN
     if remaining and remaining > 0 and data.startswith("forge_"):
         keyboard, header = main_menu(vip, remaining)
         await query.edit_message_text(
-            f"⛔ Image forging is on cooldown.\n\n{header}",
+            "⛔ Image forging is on cooldown.\n\n" + header,
             reply_markup=keyboard,
         )
         return
 
-    # -------------------------------------------------
-    # IMAGE FORGE (TEXT INPUT)
-    # -------------------------------------------------
+    # IMAGE FORGE (USER PROMPT)
     if data == "forge_image":
         context.user_data["awaiting_prompt"] = True
         await query.edit_message_text(
             "✍️ Type your image prompt.\n\n"
-            "MegaGrok will interpret it in comic-book style."
+            "MegaGrok will render it in comic-book style."
         )
         return
 
-    # -------------------------------------------------
-    # SURPRISE ME
-    # -------------------------------------------------
+    # SURPRISE ME (PROCEDURAL PROMPT)
     if data == "forge_surprise":
         await query.edit_message_text("🎲 Forging a surprise MegaGrok image…")
 
-        path = await generate_surprise_image(vip["is_vip"])
+        prompt = "surreal comic-book MegaGrok doing something unexpected"
+        path = await generate_image(prompt, vip["is_vip"])
         mark_image_used(user.id)
 
         await query.message.reply_photo(photo=path)
         return
 
-    # -------------------------------------------------
-    # VIP LOCKED FEATURES
-    # -------------------------------------------------
+    # VIP LOCK
     if data == "vip_required":
         await query.edit_message_text(
             "🔒 This feature is VIP-only.\n\n"
-            "Open the VIP bot to unlock MegaForge powers:\n"
+            "Unlock MegaForge VIP powers here:\n"
             "👉 https://t.me/MegaGrokVIPBot"
         )
         return
 
 
 # ---------------------------------------------------------
-# TEXT INPUT HANDLER (PROMPT)
+# TEXT PROMPT HANDLER
 # ---------------------------------------------------------
 
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -96,7 +91,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     remaining = image_cooldown_remaining(user.id, vip["is_vip"])
 
     if remaining and remaining > 0:
-        await update.message.reply_text("⛔ Image forging is currently on cooldown.")
+        await update.message.reply_text("⛔ Image forging is on cooldown.")
         return
 
     prompt = update.message.text
