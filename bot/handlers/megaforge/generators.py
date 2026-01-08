@@ -1,84 +1,56 @@
 import random
 
-from bot.services.stability_api import generate_image as generate_stability_image
 from bot.services.fallback_api import generate_fallback_image
+from bot.services.stability_api import generate_image as generate_stability_image
 
 
-# -----------------------------
-# PROCEDURAL CHAOS COMPONENTS
-# -----------------------------
-ACTIONS = [
-    "breaking the fourth wall",
-    "rewriting reality",
-    "escaping the comic panel",
-    "laughing at the viewer",
-    "tearing through panels",
-    "glitching the timeline",
-    "summoning chaos energy",
-]
-
-MOODS = [
-    "smug",
-    "chaotic",
-    "unhinged",
-    "godlike",
-    "sarcastic",
-    "bored",
-    "menacing",
-]
-
-SCENES = [
-    "inside a comic book",
-    "in a fractured timeline",
-    "inside a meme factory",
-    "in a neon city",
-    "inside a corrupted panel",
-    "floating between realities",
-]
-
-FRAMING = [
-    "extreme perspective",
-    "dynamic action pose",
-    "exaggerated facial expression",
-    "cinematic lighting",
-    "bold comic outlines",
+# Internal style pool (procedural chaos, not static)
+STYLE_POOL = [
+    "comic book style, bold outlines, vibrant colors",
+    "dark comic noir, dramatic lighting, graphic novel",
+    "hyper expressive comic art, exaggerated emotions",
+    "clean comic panels, modern western comic style",
+    "high contrast comic illustration, dynamic action pose",
 ]
 
 
-def procedural_chaos_prompt(style: str | None) -> str:
-    parts = [
-        "MegaGrok",
-        random.choice(ACTIONS),
-        f"with a {random.choice(MOODS)} expression",
-        random.choice(SCENES),
-        random.choice(FRAMING),
-        "comic book style",
+def _random_style():
+    return random.choice(STYLE_POOL)
+
+
+async def generate_image(prompt: str, is_vip: bool) -> str:
+    """
+    Main image generator.
+    VIP → Stability
+    Free → Fallback (Pollinations)
+    """
+
+    final_prompt = f"{prompt}, {_random_style()}"
+
+    if is_vip:
+        return await generate_stability_image(final_prompt)
+
+    # fallback API is SYNC → do NOT await
+    return generate_fallback_image(final_prompt)
+
+
+async def generate_chaos_image(is_vip: bool) -> str:
+    """
+    Pure procedural chaos generator.
+    """
+
+    chaos_prompts = [
+        "MegaGrok breaking the fourth wall inside a comic",
+        "MegaGrok as a cosmic entity tearing through panels",
+        "MegaGrok laughing while reality glitches around him",
+        "MegaGrok forged from pure chaos energy",
+        "MegaGrok as a comic god rewriting the page",
     ]
 
-    if style:
-        parts.append(style)
-
-    return ", ".join(parts)
-
-
-# -----------------------------
-# IMAGE GENERATION
-# -----------------------------
-async def generate_image(prompt: str, is_vip: bool, style: str | None) -> str:
-    final_prompt = f"MegaGrok, {prompt}"
-    if style:
-        final_prompt += f", {style}, comic book style"
+    prompt = random.choice(chaos_prompts)
+    final_prompt = f"{prompt}, {_random_style()}"
 
     if is_vip:
         return await generate_stability_image(final_prompt)
 
     return generate_fallback_image(final_prompt)
-
-
-async def generate_chaos_image(is_vip: bool, style: str | None) -> str:
-    prompt = procedural_chaos_prompt(style)
-
-    if is_vip:
-        return await generate_stability_image(prompt)
-
-    return generate_fallback_image(prompt)
