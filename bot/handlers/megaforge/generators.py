@@ -1,56 +1,37 @@
 import random
-
 from bot.services.fallback_api import generate_fallback_image
 from bot.services.stability_api import generate_image as generate_stability_image
 
 
-# Internal style pool (procedural chaos, not static)
 STYLE_POOL = [
     "comic book style, bold outlines, vibrant colors",
     "dark comic noir, dramatic lighting, graphic novel",
     "hyper expressive comic art, exaggerated emotions",
-    "clean comic panels, modern western comic style",
-    "high contrast comic illustration, dynamic action pose",
+    "modern western comic illustration, clean panels",
+    "high contrast comic art, dynamic action pose",
 ]
 
 
-def _random_style():
+def _random_style() -> str:
     return random.choice(STYLE_POOL)
 
 
 async def generate_image(prompt: str, is_vip: bool) -> str:
     """
-    Main image generator.
+    Always inject MegaGrok into the prompt.
     VIP → Stability
-    Free → Fallback (Pollinations)
+    Free → Pollinations fallback
     """
 
-    final_prompt = f"{prompt}, {_random_style()}"
+    style = _random_style()
+
+    final_prompt = (
+        f"MegaGrok character, {prompt}, "
+        f"comic universe, {style}"
+    )
 
     if is_vip:
         return await generate_stability_image(final_prompt)
 
-    # fallback API is SYNC → do NOT await
-    return generate_fallback_image(final_prompt)
-
-
-async def generate_chaos_image(is_vip: bool) -> str:
-    """
-    Pure procedural chaos generator.
-    """
-
-    chaos_prompts = [
-        "MegaGrok breaking the fourth wall inside a comic",
-        "MegaGrok as a cosmic entity tearing through panels",
-        "MegaGrok laughing while reality glitches around him",
-        "MegaGrok forged from pure chaos energy",
-        "MegaGrok as a comic god rewriting the page",
-    ]
-
-    prompt = random.choice(chaos_prompts)
-    final_prompt = f"{prompt}, {_random_style()}"
-
-    if is_vip:
-        return await generate_stability_image(final_prompt)
-
+    # fallback is synchronous
     return generate_fallback_image(final_prompt)
