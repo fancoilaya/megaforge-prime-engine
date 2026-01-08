@@ -1,5 +1,9 @@
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
-from bot.config import VIP_SERVICE_URL
+
+# IMPORTANT:
+# This should be the Telegram username of your VIP bot
+VIP_BOT_URL = "https://t.me/MegaGrokVIPBot"
+
 
 def main_menu(is_vip: bool):
     rows = [
@@ -13,7 +17,7 @@ def main_menu(is_vip: bool):
         rows.append([
             InlineKeyboardButton(
                 "🔗 Link Wallet (Enable VIP)",
-                url=f"{VIP_SERVICE_URL}/link"
+                url=f"{VIP_BOT_URL}?start=link"
             )
         ])
 
@@ -21,24 +25,28 @@ def main_menu(is_vip: bool):
 
     return InlineKeyboardMarkup(rows)
 
+
 def vip_locked_message() -> str:
     return (
         "🔒 **VIP FORGE LOCKED**\n\n"
-        "This forge requires VIP access.\n\n"
-        "VIP unlocks:\n"
+        "This forge requires **VIP access**.\n\n"
+        "✨ VIP unlocks:\n"
         "• High-quality image rendering\n"
         "• Faster cooldowns\n"
         "• Meme & Sticker Forge\n"
         "• Presets & future tools\n\n"
+        "🔐 **Wallet linking is handled securely** via the\n"
+        "**MegaGrok VIP Bot** in a private chat.\n\n"
         "👇 Enable VIP below"
     )
+
 
 def vip_locked_keyboard():
     return InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
-                "🔗 Link Wallet (Enable VIP)",
-                url=f"{VIP_SERVICE_URL}/link"
+                "🔗 Open VIP Bot (Link Wallet)",
+                url=f"{VIP_BOT_URL}?start=link"
             )
         ],
         [
