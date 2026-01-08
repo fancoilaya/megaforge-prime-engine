@@ -1,9 +1,8 @@
 import random
 
-# IMPORTANT:
-# These imports MUST match existing service functions
-from bot.services.stability_api import generate_image as generate_stability
-from bot.services.fallback_api import generate_image as generate_fallback
+# ✅ MATCHES YOUR ACTUAL SERVICES
+from bot.services.stability_api import generate_image as generate_stability_image
+from bot.services.fallback_api import generate_fallback_image
 
 # -----------------------------
 # STYLE PROMPT MODIFIERS
@@ -23,10 +22,10 @@ async def generate_image(prompt: str, is_vip: bool, style: str) -> str:
 
     if is_vip:
         # VIP → Stability AI
-        return await generate_stability(final_prompt)
+        return await generate_stability_image(final_prompt)
 
     # Free → fallback engine
-    return await generate_fallback(final_prompt)
+    return await generate_fallback_image(final_prompt)
 
 # -----------------------------
 # CHAOS FORGE
@@ -44,9 +43,9 @@ async def generate_chaos_image(is_vip: bool, style: str) -> str:
     chaos_prompt = f"MegaGrok {random.choice(chaos_prompts)}, {style_hint}"
 
     if is_vip:
-        return await generate_stability(chaos_prompt)
+        return await generate_stability_image(chaos_prompt)
 
-    return await generate_fallback(chaos_prompt)
+    return await generate_fallback_image(chaos_prompt)
 
 # -----------------------------
 # REMIX LAST IMAGE
@@ -59,6 +58,6 @@ async def remix_last_image(is_vip: bool, style: str) -> str:
     )
 
     if is_vip:
-        return await generate_stability(remix_prompt)
+        return await generate_stability_image(remix_prompt)
 
-    return await generate_fallback(remix_prompt)
+    return await generate_fallback_image(remix_prompt)
