@@ -19,8 +19,18 @@ async def handle_megaforge(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     keyboard, header = main_menu(vip, remaining)
 
+    intro = (
+        "🔥 **MEGAFORGE**\n\n"
+        "MegaForge is the creative engine of **MegaGrok**.\n"
+        "Here you forge comic-style art, surreal scenes, memes, "
+        "and visual experiments powered by Grok.\n\n"
+        "Every image is generated live — no templates, no repeats.\n\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "👤 **Your Status**\n"
+    )
+
     await update.message.reply_text(
-        header,
+        intro + header,
         reply_markup=keyboard,
     )
 
@@ -43,7 +53,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if remaining and remaining > 0 and data.startswith("forge_"):
         keyboard, header = main_menu(vip, remaining)
         await query.edit_message_text(
-            "⛔ Image forging is on cooldown.\n\n" + header,
+            "⏳ **Image Forge on Cooldown**\n\n"
+            "You’ve recently forged an image.\n"
+            "Please wait before forging again.\n\n"
+            + header,
             reply_markup=keyboard,
         )
         return
@@ -52,16 +65,30 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data == "forge_image":
         context.user_data["awaiting_prompt"] = True
         await query.edit_message_text(
-            "✍️ Type your image prompt.\n\n"
-            "MegaGrok will render it in comic-book style."
+            "✍️ **Image Forge**\n\n"
+            "Send a prompt describing what you want to see.\n\n"
+            "Tips:\n"
+            "• Characters, actions, emotions\n"
+            "• Comic or cinematic moments\n"
+            "• MegaGrok themes welcome\n\n"
+            "_Your prompt is used once for this image only._"
         )
         return
 
     # SURPRISE ME (PROCEDURAL PROMPT)
     if data == "forge_surprise":
-        await query.edit_message_text("🎲 Forging a surprise MegaGrok image…")
+        await query.edit_message_text(
+            "🎲 **Surprise Forge**\n\n"
+            "MegaGrok is improvising something unexpected...\n"
+            "Forging image now ⏳"
+        )
 
-        prompt = "surreal comic-book MegaGrok doing something unexpected"
+        prompt = (
+            "MegaGrok in a dramatic comic-book scene, "
+            "bold ink lines, dynamic pose, expressive emotion, "
+            "high contrast, graphic novel style"
+        )
+
         path = await generate_image(prompt, vip["is_vip"])
         mark_image_used(user.id)
 
@@ -71,8 +98,13 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # VIP LOCK
     if data == "vip_required":
         await query.edit_message_text(
-            "🔒 This feature is VIP-only.\n\n"
-            "Unlock MegaForge VIP powers here:\n"
+            "🔒 **VIP Feature**\n\n"
+            "This forge mode is reserved for VIP holders.\n\n"
+            "VIP unlocks:\n"
+            "• Faster cooldowns\n"
+            "• Meme & Sticker Forge\n"
+            "• Higher-tier generation\n\n"
+            "🔗 Link your wallet securely via the VIP bot:\n"
             "👉 https://t.me/MegaGrokVIPBot"
         )
         return
@@ -91,13 +123,20 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     remaining = image_cooldown_remaining(user.id, vip["is_vip"])
 
     if remaining and remaining > 0:
-        await update.message.reply_text("⛔ Image forging is on cooldown.")
+        await update.message.reply_text(
+            "⏳ Image Forge is still cooling down.\n"
+            "Please wait before sending another prompt."
+        )
         return
 
     prompt = update.message.text
     context.user_data["awaiting_prompt"] = False
 
-    await update.message.reply_text("🎨 Forging your MegaGrok image…")
+    await update.message.reply_text(
+        "🎨 **Forge in Progress**\n\n"
+        "MegaGrok is rendering your idea...\n"
+        "This can take a moment ⏳"
+    )
 
     path = await generate_image(prompt, vip["is_vip"])
     mark_image_used(user.id)
