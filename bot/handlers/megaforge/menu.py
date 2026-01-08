@@ -1,28 +1,50 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-VIP_BOT_URL = "https://t.me/MegaGrokVIPBot"
 
+def main_menu(vip: dict, remaining: int | None):
+    """
+    Main MegaForge menu.
+    vip: dict with at least {"is_vip": bool}
+    remaining: cooldown seconds remaining or None
+    """
 
-def main_menu(is_vip: bool):
-    buttons = [
-        [InlineKeyboardButton("🖼 Image Forge", callback_data="image_forge")],
-        [InlineKeyboardButton("🎲 Surprise Me", callback_data="surprise_me")],
+    is_vip = vip.get("is_vip", False)
+
+    cooldown_text = (
+        f"⏳ Image cooldown: {remaining // 60}m {remaining % 60}s"
+        if remaining and remaining > 0
+        else "✅ Image forge ready"
+    )
+
+    vip_text = "🟢 VIP ACTIVE" if is_vip else "🔴 FREE USER"
+
+    keyboard = [
+        [
+            InlineKeyboardButton("🎨 Image Forge", callback_data="forge_image"),
+        ],
+        [
+            InlineKeyboardButton("🎲 Surprise Me", callback_data="forge_surprise"),
+        ],
+        [
+            InlineKeyboardButton(
+                "🖼 Meme Forge (VIP)",
+                callback_data="forge_meme" if is_vip else "vip_required",
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                "🧩 Sticker Forge (VIP)",
+                callback_data="forge_sticker" if is_vip else "vip_required",
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                "💎 Open VIP Bot",
+                url="https://t.me/MegaGrokVIPBot",
+            )
+        ],
     ]
 
-    if is_vip:
-        buttons.append([InlineKeyboardButton("😈 Meme Forge", callback_data="meme_forge")])
-        buttons.append([InlineKeyboardButton("🧩 Sticker Forge", callback_data="sticker_forge")])
-    else:
-        buttons.append([InlineKeyboardButton("😈 Meme Forge 🔒 VIP", callback_data="vip_required")])
-        buttons.append([InlineKeyboardButton("🧩 Sticker Forge 🔒 VIP", callback_data="vip_required")])
+    header = f"🔥 MegaForge\n{vip_text}\n{cooldown_text}"
 
-    buttons.append([
-        InlineKeyboardButton(
-            "🔗 Link Wallet (VIP Bot)",
-            url=VIP_BOT_URL
-        )
-    ])
-
-    buttons.append([InlineKeyboardButton("❌ Exit", callback_data="exit")])
-
-    return InlineKeyboardMarkup(buttons)
+    return InlineKeyboardMarkup(keyboard), header
