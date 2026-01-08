@@ -9,7 +9,7 @@ from .cooldowns import image_cooldown_remaining
 from .menu import main_menu, vip_locked_message, vip_locked_keyboard
 from .generators import generate_image_for_session
 
-logging.info("📦 Loading MegaForge UI module (VIP-aware)")
+logging.info("📦 Loading MegaForge UI module (privacy-safe)")
 
 # -----------------------------
 # SAFE MESSAGE HELPER
@@ -42,21 +42,13 @@ async def handle_megaforge(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "👤 **Your Status**\n\n"
         f"ID: `{user_id}`\n"
         f"VIP ACCESS: {'🟢 ENABLED' if vip['is_vip'] else '🔴 NOT ENABLED'}\n"
-        f"Wallet: `{vip['wallet'][:6]}…{vip['wallet'][-4:]}`\n"
-        if vip["wallet"]
-        else "Wallet: Not linked\n"
-    )
-
-    balances = (
-        f"SOL Balance: `{vip['sol_balance']}`\n"
-        f"Token Balance: `{vip['token_balance']}`\n"
     )
 
     await update.message.reply_text(
         "🔥 **MEGAFORGE**\n\n"
         "The MegaForge is a creative engine powered by MegaGrok.\n"
         "Forge comic-style art, memes, stickers & viral content.\n\n"
-        f"{status_block}{balances}\n"
+        f"{status_block}\n"
         "Choose a forge mode:",
         reply_markup=main_menu(vip["is_vip"]),
         parse_mode="Markdown"
@@ -78,7 +70,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if query.data == "mf_exit":
         session["state"] = ForgeState.EXIT
-        await safe_reply(query, "🧱 MegaForge closed.")
+        await safe_reply(query, "❌ MegaForge closed.")
         return
 
     if query.data == "mf_back":
@@ -94,7 +86,9 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         session["state"] = ForgeState.IMAGE_INPUT
         await safe_reply(
             query,
-            "🖼 **IMAGE FORGE**\n\nDescribe what MegaGrok is doing.\nComic style always applied.",
+            "🖼 **IMAGE FORGE**\n\n"
+            "Describe what MegaGrok is doing.\n"
+            "Comic book style is always applied.",
             parse_mode="Markdown",
         )
         return
