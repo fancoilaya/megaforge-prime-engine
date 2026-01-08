@@ -1,36 +1,30 @@
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton
-
-VIP_BOT_URL = "https://t.me/MegaGrokVIPBot"
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 
-def main_menu(is_vip: bool):
-    rows = [
-        [InlineKeyboardButton("🖼 Image Forge", callback_data="mf_image_menu")],
-        [InlineKeyboardButton("❌ Exit", callback_data="mf_exit")],
+VIP_BOT_URL = "https://t.me/MegaGrokVIPBot"  # change if needed
+
+
+def main_menu(vip: bool):
+    buttons = [
+        [InlineKeyboardButton("🖼 Image Forge", callback_data="image_forge")],
+        [InlineKeyboardButton("🎲 Surprise Me", callback_data="surprise_me")],
     ]
 
-    if not is_vip:
-        rows.insert(
-            1,
-            [InlineKeyboardButton("🔗 Link Wallet (Enable VIP)", url=f"{VIP_BOT_URL}?start=link")]
+    if vip:
+        buttons.append([InlineKeyboardButton("😈 Meme Forge", callback_data="meme_forge")])
+        buttons.append([InlineKeyboardButton("🧩 Sticker Forge", callback_data="sticker_forge")])
+    else:
+        buttons.append([InlineKeyboardButton("😈 Meme Forge 🔒 VIP", callback_data="vip_required")])
+        buttons.append([InlineKeyboardButton("🧩 Sticker Forge 🔒 VIP", callback_data="vip_required")])
+
+    # VIP BOT LINK (always visible)
+    buttons.append([
+        InlineKeyboardButton(
+            "🔗 Link Wallet (VIP Bot)",
+            url=VIP_BOT_URL
         )
-
-    return InlineKeyboardMarkup(rows)
-
-
-def image_forge_menu():
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("✍️ Free Prompt", callback_data="if_free")],
-        [InlineKeyboardButton("🎲 Surprise Me", callback_data="if_chaos")],
-        [InlineKeyboardButton("🎨 Style Picker", callback_data="if_style")],
-        [InlineKeyboardButton("⬅ Back", callback_data="mf_back")],
     ])
 
+    buttons.append([InlineKeyboardButton("❌ Exit", callback_data="exit")])
 
-def style_picker_menu():
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🖊 Comic Classic", callback_data="style_comic")],
-        [InlineKeyboardButton("🎞 Cinematic", callback_data="style_cinematic")],
-        [InlineKeyboardButton("🤯 Psychedelic", callback_data="style_psy")],
-        [InlineKeyboardButton("⬅ Back", callback_data="mf_image_menu")],
-    ])
+    return InlineKeyboardMarkup(buttons)
