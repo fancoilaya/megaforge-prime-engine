@@ -33,12 +33,11 @@ def image_forge_menu():
         [InlineKeyboardButton("✍️ Free Prompt", callback_data="if_free")],
         [InlineKeyboardButton("🎭 Chaos Forge", callback_data="if_chaos")],
         [InlineKeyboardButton("🎨 Style Picker", callback_data="if_style")],
-        [InlineKeyboardButton("🔁 Remix Last Image", callback_data="if_remix")],
         [InlineKeyboardButton("⬅ Back", callback_data="mf_back")],
     ])
 
 # -----------------------------
-# STYLE PICKER MENU  ✅ REQUIRED
+# STYLE PICKER MENU
 # -----------------------------
 def style_picker_menu():
     return InlineKeyboardMarkup([
@@ -46,26 +45,4 @@ def style_picker_menu():
         [InlineKeyboardButton("🎞 Cinematic", callback_data="style_cinematic")],
         [InlineKeyboardButton("🤯 Psychedelic", callback_data="style_psy")],
         [InlineKeyboardButton("⬅ Back", callback_data="mf_image_menu")],
-    ])
-
-# -----------------------------
-# VIP LOCKED MESSAGE
-# -----------------------------
-def vip_locked_message() -> str:
-    return (
-        "🔒 **VIP FORGE LOCKED**\n\n"
-        "This forge requires **VIP access**.\n\n"
-        "🔐 Wallet linking is handled securely via the\n"
-        "**MegaGrok VIP Bot** in a private chat."
-    )
-
-def vip_locked_keyboard():
-    return InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(
-                "🔗 Open VIP Bot",
-                url=f"{VIP_BOT_URL}?start=link"
-            )
-        ],
-        [InlineKeyboardButton("⬅ Back", callback_data="mf_back")]
     ])
