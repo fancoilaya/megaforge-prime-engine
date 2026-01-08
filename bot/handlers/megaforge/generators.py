@@ -5,48 +5,80 @@ from bot.services.fallback_api import generate_fallback_image
 
 
 # -----------------------------
-# CHAOS PROMPTS
+# PROCEDURAL CHAOS COMPONENTS
 # -----------------------------
-CHAOS_PROMPTS = [
-    "MegaGrok breaking the fourth wall inside a comic",
-    "Grok as a chaotic trickster god in a neon comic universe",
-    "MegaGrok laughing while reality glitches around him",
-    "A comic panel tearing itself apart, Grok emerging",
-    "Absurd comic chaos, bold colors, surreal action",
+ACTIONS = [
+    "breaking the fourth wall",
+    "rewriting reality",
+    "escaping the comic panel",
+    "laughing at the viewer",
+    "tearing through panels",
+    "glitching the timeline",
+    "summoning chaos energy",
+]
+
+MOODS = [
+    "smug",
+    "chaotic",
+    "unhinged",
+    "godlike",
+    "sarcastic",
+    "bored",
+    "menacing",
+]
+
+SCENES = [
+    "inside a comic book",
+    "in a fractured timeline",
+    "inside a meme factory",
+    "in a neon city",
+    "inside a corrupted panel",
+    "floating between realities",
+]
+
+FRAMING = [
+    "extreme perspective",
+    "dynamic action pose",
+    "exaggerated facial expression",
+    "cinematic lighting",
+    "bold comic outlines",
 ]
 
 
-def random_chaos_prompt(style: str | None = None) -> str:
-    base = random.choice(CHAOS_PROMPTS)
+def procedural_chaos_prompt(style: str | None) -> str:
+    parts = [
+        "MegaGrok",
+        random.choice(ACTIONS),
+        f"with a {random.choice(MOODS)} expression",
+        random.choice(SCENES),
+        random.choice(FRAMING),
+        "comic book style",
+    ]
 
     if style:
-        return f"{base}, {style}, comic book style, bold outlines, vibrant colors"
+        parts.append(style)
 
-    return f"{base}, comic book style, bold outlines, vibrant colors"
+    return ", ".join(parts)
 
 
 # -----------------------------
-# IMAGE GENERATORS
+# IMAGE GENERATION
 # -----------------------------
-async def generate_image(prompt: str, is_vip: bool) -> str:
-    """
-    Standard image generation.
-    VIP -> Stability (async)
-    Free -> Pollinations (sync)
-    """
+async def generate_image(prompt: str, is_vip: bool, style: str | None) -> str:
+    final_prompt = f"MegaGrok, {prompt}"
+    if style:
+        final_prompt += f", {style}, comic book style"
+
+    if is_vip:
+        return await generate_stability_image(final_prompt)
+
+    return generate_fallback_image(final_prompt)
+
+
+async def generate_chaos_image(is_vip: bool, style: str | None) -> str:
+    prompt = procedural_chaos_prompt(style)
+
     if is_vip:
         return await generate_stability_image(prompt)
 
     return generate_fallback_image(prompt)
-
-
-async def generate_chaos_image(is_vip: bool, style: str | None = None) -> str:
-    """
-    Chaos generator with random prompt.
-    """
-    chaos_prompt = random_chaos_prompt(style)
-
-    if is_vip:
-        return await generate_stability_image(chaos_prompt)
-
-    return generate_fallback_image(chaos_prompt)
