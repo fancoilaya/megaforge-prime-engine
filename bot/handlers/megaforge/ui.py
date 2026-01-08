@@ -9,13 +9,10 @@ from .menu import (
     main_menu,
     image_forge_menu,
     style_picker_menu,
-    vip_locked_message,
-    vip_locked_keyboard,
 )
 from .generators import (
     generate_image,
     generate_chaos_image,
-    remix_last_image,
 )
 
 # -----------------------------
@@ -90,7 +87,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await safe_reply(query, "✍️ Describe what MegaGrok is doing:")
         return
 
-    # CHAOS FORGE ✅ FIXED
+    # CHAOS FORGE
     if query.data == "if_chaos":
         if image_cooldown_remaining(session) > 0:
             await safe_reply(query, "⏳ Image Forge cooling down.")
@@ -98,7 +95,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await safe_reply(query, "🎭 **Chaos unleashed…**")
         path = await generate_chaos_image(vip["is_vip"], style)
-        session["last_image"] = path
         session["cooldowns"]["image"] = int(time.time())
 
         with open(path, "rb") as img:
@@ -122,23 +118,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await safe_reply(query, f"✅ Style set: {session['style'].title()}")
         return
 
-    # REMIX
-    if query.data == "if_remix":
-        if not session.get("last_image"):
-            await safe_reply(query, "⚠️ No image to remix yet.")
-            return
-
-        await safe_reply(query, "🔁 Remixing last image…")
-        path = await remix_last_image(vip["is_vip"], style)
-        session["last_image"] = path
-
-        with open(path, "rb") as img:
-            await query.message.reply_photo(
-                img,
-                reply_markup=main_menu(vip["is_vip"])
-            )
-        return
-
 # -----------------------------
 # TEXT INPUT
 # -----------------------------
@@ -156,7 +135,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     path = await generate_image(update.message.text, vip["is_vip"], style)
-    session["last_image"] = path
     session["cooldowns"]["image"] = int(time.time())
     session["state"] = ForgeState.MAIN_MENU
 
