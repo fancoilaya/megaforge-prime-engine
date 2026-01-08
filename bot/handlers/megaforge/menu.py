@@ -1,5 +1,6 @@
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
+# Telegram username of the VIP bot
 VIP_BOT_URL = "https://t.me/MegaGrokVIPBot"
 
 # -----------------------------
@@ -25,24 +26,37 @@ def main_menu(is_vip: bool):
     return InlineKeyboardMarkup(rows)
 
 # -----------------------------
-# IMAGE FORGE SUB MENU
+# IMAGE FORGE SUB-MENU
 # -----------------------------
 def image_forge_menu():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("✍️ Free Prompt", callback_data="if_free")],
         [InlineKeyboardButton("🎭 Chaos Forge", callback_data="if_chaos")],
+        [InlineKeyboardButton("🎨 Style Picker", callback_data="if_style")],
+        [InlineKeyboardButton("🔁 Remix Last Image", callback_data="if_remix")],
         [InlineKeyboardButton("⬅ Back", callback_data="mf_back")],
     ])
 
 # -----------------------------
-# VIP LOCKED
+# STYLE PICKER MENU  ✅ REQUIRED
 # -----------------------------
-def vip_locked_message():
+def style_picker_menu():
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🖊 Comic Classic", callback_data="style_comic")],
+        [InlineKeyboardButton("🎞 Cinematic", callback_data="style_cinematic")],
+        [InlineKeyboardButton("🤯 Psychedelic", callback_data="style_psy")],
+        [InlineKeyboardButton("⬅ Back", callback_data="mf_image_menu")],
+    ])
+
+# -----------------------------
+# VIP LOCKED MESSAGE
+# -----------------------------
+def vip_locked_message() -> str:
     return (
         "🔒 **VIP FORGE LOCKED**\n\n"
         "This forge requires **VIP access**.\n\n"
         "🔐 Wallet linking is handled securely via the\n"
-        "**MegaGrok VIP Bot** in private chat."
+        "**MegaGrok VIP Bot** in a private chat."
     )
 
 def vip_locked_keyboard():
