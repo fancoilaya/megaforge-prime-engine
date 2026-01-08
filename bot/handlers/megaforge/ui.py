@@ -24,7 +24,7 @@ async def handle_megaforge(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
 
     session = get_session(chat_id)
-    vip = await get_vip_status(user.id)
+    vip = get_vip_status(user.id)
 
     session["is_vip"] = vip["is_vip"]
 
