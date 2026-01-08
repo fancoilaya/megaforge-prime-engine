@@ -13,19 +13,23 @@ from .generators import generate_image, generate_chaos_image
 # /megaforge ENTRY
 # -----------------------------
 async def handle_megaforge(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    session = get_session(user.id)
+    user_id = update.effective_user.id
+    session = get_session(user_id)
 
-    vip = fetch_vip_status(user.id)
+    vip = fetch_vip_status(user_id)
+    session.clear()  # 🔥 RESET SESSION EVERY RUN
     session["vip"] = vip
     session["state"] = ForgeState.MAIN_MENU
-    session.setdefault("style", None)
+    session["style"] = None
 
     await update.message.reply_text(
         "🔥 **MEGAFORGE**\n\n"
         "Create comic-style MegaGrok art.\n\n"
+        "• ✍️ Write what MegaGrok is doing\n"
+        "• 🎲 Or let MegaForge surprise you\n"
+        "• 🎨 Optional style picker\n\n"
         f"VIP ACCESS: {'🟢 ENABLED' if vip['is_vip'] else '🔴 NOT ENABLED'}",
-        reply_markup=main_menu(vip["is_vip"]),
+        reply_markup=image_forge_menu(),
         parse_mode="Markdown",
     )
 
@@ -40,33 +44,23 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = query.from_user.id
     session = get_session(user_id)
 
-    # 🔒 SAFE VIP INITIALIZATION (FIX)
-    vip = session.get("vip")
-    if not vip:
-        vip = fetch_vip_status(user_id)
-        session["vip"] = vip
-
+    vip = session.get("vip") or fetch_vip_status(user_id)
+    session["vip"] = vip
     style = session.get("style")
 
-    # EXIT
-    if query.data == "mf_exit":
-        await query.edit_message_text("❌ MegaForge closed.")
-        return
-
-    # BACK
-    if query.data == "mf_back":
-        await query.edit_message_text(
-            "🔙 MegaForge",
-            reply_markup=main_menu(vip["is_vip"]),
+    # STYLE PICKER
+    if query.data == "if_style":
+        await query.message.reply_text(
+            "🎨 Choose a style (applies to the next image only):",
+            reply_markup=style_picker_menu(),
         )
         return
 
-    # IMAGE FORGE MENU
-    if query.data == "mf_image_menu":
-        await query.edit_message_text(
-            "🖼 **IMAGE FORGE**\n\n"
-            "Type a prompt or try 🎲 Surprise Me:",
-            reply_markup=image_forge_menu(),
+    if query.data.startswith("style_"):
+        session["style"] = query.data.replace("style_", "")
+        await query.message.reply_text(
+            f"✅ Style set: **{session['style'].title()}**\n\n"
+            "Now generate an image.",
             parse_mode="Markdown",
         )
         return
@@ -74,37 +68,33 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # FREE PROMPT
     if query.data == "if_free":
         session["state"] = ForgeState.IMAGE_INPUT
-        await query.edit_message_text("✍️ Describe what MegaGrok is doing:")
+        await query.message.reply_text("✍️ Describe what **MegaGrok** is doing:")
         return
 
-    # CHAOS / SURPRISE ME
+    # SURPRISE ME (PROCEDURAL CHAOS)
     if query.data == "if_chaos":
         if image_cooldown_remaining(session) > 0:
-            await query.edit_message_text("⏳ Image Forge cooling down.")
+            await query.message.reply_text("⏳ Image Forge cooling down.")
             return
 
-        await query.edit_message_text("🎲 **Surprise Me activated…**", parse_mode="Markdown")
-        path = await generate_chaos_image(vip["is_vip"], style)
+        await query.message.reply_text("🎲 **Forging chaotic MegaGrok comic…**", parse_mode="Markdown")
+
+        path = await generate_chaos_image(
+            vip["is_vip"],
+            session.get("style"),
+        )
+
         session["cooldowns"]["image"] = int(time.time())
+        session.clear()  # 🔥 END SESSION AFTER IMAGE
 
         with open(path, "rb") as img:
-            await query.message.reply_photo(
-                img,
-                reply_markup=main_menu(vip["is_vip"])
-            )
-        return
+            await query.message.reply_photo(img)
 
-    # STYLE PICKER
-    if query.data == "if_style":
-        await query.edit_message_text(
-            "🎨 Choose a style (applies to next images):",
-            reply_markup=style_picker_menu(),
+        await query.message.reply_text(
+            "🖼 **MegaForge complete.**\n\n"
+            "Run `/megaforge` to forge another image.",
+            parse_mode="Markdown",
         )
-        return
-
-    if query.data.startswith("style_"):
-        session["style"] = query.data.replace("style_", "")
-        await query.edit_message_text(f"✅ Style set: {session['style'].title()}")
         return
 
 
@@ -118,23 +108,34 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if session.get("state") != ForgeState.IMAGE_INPUT:
         return
 
-    vip = session.get("vip")
-    if not vip:
-        vip = fetch_vip_status(user_id)
-        session["vip"] = vip
-
-    style = session.get("style")
+    vip = session.get("vip") or fetch_vip_status(user_id)
+    session["vip"] = vip
 
     if image_cooldown_remaining(session) > 0:
         await update.message.reply_text("⏳ Image Forge cooling down.")
         return
 
-    path = await generate_image(update.message.text, vip["is_vip"], style)
+    style = session.get("style")
+
+    # HARD ANCHOR MEGAGROK + COMIC
+    prompt = (
+        f"MegaGrok comic character, {update.message.text}, "
+        "comic book style, bold outlines, expressive character"
+    )
+
+    if style:
+        prompt += f", {style}"
+
+    path = await generate_image(prompt, vip["is_vip"], style)
+
     session["cooldowns"]["image"] = int(time.time())
-    session["state"] = ForgeState.MAIN_MENU
+    session.clear()  # 🔥 END SESSION AFTER IMAGE
 
     with open(path, "rb") as img:
-        await update.message.reply_photo(
-            img,
-            reply_markup=main_menu(vip["is_vip"])
-        )
+        await update.message.reply_photo(img)
+
+    await update.message.reply_text(
+        "🖼 **MegaForge complete.**\n\n"
+        "Run `/megaforge` to forge another image.",
+        parse_mode="Markdown",
+    )
