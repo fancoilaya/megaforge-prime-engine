@@ -2,136 +2,123 @@ import time
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from .sessions import get_session, ForgeState
-from .vip import fetch_vip_status
-from .cooldowns import image_cooldown_remaining
 from .menu import main_menu
-from .generators import generate_image, generate_chaos_image
+from .generators import generate_image
+from .cooldowns import image_cooldown_remaining, mark_image_used
+from .sessions import get_session
+from .vip import get_vip_status
 
 
-def _cooldown_text(session, vip):
-    remaining = image_cooldown_remaining(session)
+def _cooldown_text(session, is_vip: bool) -> str:
+    remaining = image_cooldown_remaining(session, is_vip)
     if remaining <= 0:
-        return "✅ Image Forge Ready"
+        return "🟢 Image Forge Ready"
 
-    minutes = remaining // 60
-    return (
-        f"⚡ VIP Cooldown: {minutes}m remaining"
-        if vip["is_vip"]
-        else f"⏱ Image Cooldown: {minutes}m remaining"
-    )
+    mins = remaining // 60
+    secs = remaining % 60
+    return f"⏳ Cooldown: {mins}m {secs}s"
 
 
-# /megaforge command
 async def handle_megaforge(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    session = get_session(user_id)
+    user = update.effective_user
+    chat_id = update.effective_chat.id
 
-    vip = fetch_vip_status(user_id)
-    session.clear()
-    session["vip"] = vip
-    session["cooldowns"] = {}
-    session["state"] = ForgeState.MAIN_MENU
+    session = get_session(chat_id)
+    vip = await get_vip_status(user.id)
 
-    await update.message.reply_text(
+    session["is_vip"] = vip["is_vip"]
+
+    text = (
         "🔥 **MEGAFORGE**\n\n"
-        "Forge comic-style art powered by **MegaGrok**.\n\n"
-        "━━━━━━━━━━━━━━━━━━\n"
+        "Forge comic-style art powered by MegaGrok.\n\n"
         "👤 **Your Status**\n\n"
         f"VIP ACCESS: {'🟢 ENABLED' if vip['is_vip'] else '🔴 NOT ENABLED'}\n"
-        f"{_cooldown_text(session, vip)}\n\n"
-        "💡 Wallet linking is handled securely via the VIP bot.\n"
-        "━━━━━━━━━━━━━━━━━━\n\n"
-        "Choose a forge mode:",
-        reply_markup=main_menu(vip["is_vip"]),
-        parse_mode="Markdown",
+        f"{_cooldown_text(session, vip['is_vip'])}\n\n"
+        "💡 Wallet linking is handled securely via the VIP bot.\n\n"
+        "Choose a forge mode:"
+    )
+
+    await context.bot.send_message(
+        chat_id=chat_id,
+        text=text,
+        reply_markup=main_menu(vip["is_vip"])
     )
 
 
-# Inline button handler
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    user_id = query.from_user.id
-    session = get_session(user_id)
+    chat_id = query.message.chat_id
+    session = get_session(chat_id)
+    is_vip = session.get("is_vip", False)
 
-    vip = session.get("vip") or fetch_vip_status(user_id)
-    session["vip"] = vip
+    if query.data == "image_forge":
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text="✏️ Send a prompt for your MegaGrok image."
+        )
+        session["awaiting_prompt"] = True
+        return
 
-    if query.data == "exit":
-        session.clear()
-        await query.message.reply_text("👋 MegaForge closed.")
+    if query.data == "surprise_me":
+        if image_cooldown_remaining(session, is_vip) > 0:
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text="⏳ Image Forge is on cooldown. Try again later."
+            )
+            return
+
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text="🎨 Forging a surprise MegaGrok image…"
+        )
+
+        path = await generate_image(
+            prompt="doing something unexpected",
+            is_vip=is_vip
+        )
+
+        mark_image_used(session)
+
+        await context.bot.send_photo(
+            chat_id=chat_id,
+            photo=open(path, "rb"),
+            caption="🖼 Forge complete.\n\nRun /megaforge again."
+        )
         return
 
     if query.data == "vip_required":
-        await query.message.reply_text(
-            "🔒 This forge is VIP-only.\n\n"
-            "Use **Link Wallet (VIP Bot)** to unlock.",
-            parse_mode="Markdown",
-        )
-        return
-
-    if query.data in ("image_forge", "surprise_me"):
-        if image_cooldown_remaining(session) > 0:
-            await query.message.reply_text("⏳ Image Forge is cooling down.")
-            return
-
-        await query.message.reply_text(
-            "🔥 MegaForge is forging your image...\n⏳ Please wait."
-        )
-
-        if query.data == "surprise_me":
-            path = await generate_chaos_image(vip["is_vip"])
-        else:
-            session["state"] = ForgeState.IMAGE_INPUT
-            await query.message.reply_text("✍️ Describe what MegaGrok is doing:")
-            return
-
-        session["cooldowns"]["image"] = int(time.time())
-        session.clear()
-
-        with open(path, "rb") as img:
-            await query.message.reply_photo(img)
-
-        await query.message.reply_text(
-            "🖼 **Forge complete.**\n\nRun `/megaforge` again.",
-            parse_mode="Markdown",
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text="🔒 This forge requires VIP access.\nUse the VIP bot to unlock."
         )
 
 
-# Text input handler
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    session = get_session(user_id)
+    chat_id = update.effective_chat.id
+    session = get_session(chat_id)
 
-    if session.get("state") != ForgeState.IMAGE_INPUT:
+    if not session.get("awaiting_prompt"):
         return
 
-    vip = session.get("vip") or fetch_vip_status(user_id)
+    is_vip = session.get("is_vip", False)
 
-    if image_cooldown_remaining(session) > 0:
-        await update.message.reply_text("⏳ Image Forge is cooling down.")
+    if image_cooldown_remaining(session, is_vip) > 0:
+        await update.message.reply_text(
+            "⏳ Image Forge is on cooldown. Try again later."
+        )
         return
 
-    await update.message.reply_text(
-        "🔥 MegaForge is forging your image...\n⏳ Please wait."
-    )
+    prompt = update.message.text
+    session["awaiting_prompt"] = False
 
-    prompt = (
-        f"MegaGrok comic character, {update.message.text}, "
-        "comic book style, bold outlines, expressive character"
-    )
+    await update.message.reply_text("🎨 Forging your MegaGrok image…")
 
-    path = await generate_image(prompt, vip["is_vip"])
+    path = await generate_image(prompt, is_vip)
+    mark_image_used(session)
 
-    session["cooldowns"]["image"] = int(time.time())
-    session.clear()
-
-    with open(path, "rb") as img:
-        await update.message.reply_photo(img)
-
-    await update.message.reply_text(
-        "🖼 **Forge complete.**\n\nRun `/megaforge` again.",
-        parse_mode="Markdown",
+    await update.message.reply_photo(
+        photo=open(path, "rb"),
+        caption="🖼 Forge complete.\n\nRun /megaforge again."
     )
