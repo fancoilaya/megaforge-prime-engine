@@ -35,10 +35,8 @@ async def generate_image(prompt: str, is_vip: bool) -> str:
     Free -> Pollinations (sync)
     """
     if is_vip:
-        # Stability is async
         return await generate_stability_image(prompt)
 
-    # Fallback is sync → DO NOT await
     return generate_fallback_image(prompt)
 
 
@@ -49,8 +47,6 @@ async def generate_chaos_image(is_vip: bool, style: str | None = None) -> str:
     chaos_prompt = random_chaos_prompt(style)
 
     if is_vip:
-        # Stability async
         return await generate_stability_image(chaos_prompt)
 
-    # Pollinations sync
     return generate_fallback_image(chaos_prompt)
