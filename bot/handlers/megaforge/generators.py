@@ -1,8 +1,45 @@
-import asyncio
-from bot.services.fallback_api import generate_fallback_image
-from bot.services.stability_api import generate_image
+import random
+from bot.services.stability_api import generate_stability_image
+from bot.services.fallback_api import generate_pollinations_image
 
-async def generate_image_for_session(prompt: str, is_vip: bool) -> str:
-    generator = generate_image if is_vip else generate_fallback_image
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, generator, prompt)
+# -----------------------------
+# FREE PROMPT IMAGE
+# -----------------------------
+async def generate_image(prompt: str, is_vip: bool) -> str:
+    final_prompt = f"MegaGrok comic book style, {prompt}"
+
+    if is_vip:
+        return await generate_stability_image(final_prompt)
+
+    return await generate_pollinations_image(final_prompt)
+
+# -----------------------------
+# CHAOS FORGE
+# -----------------------------
+async def generate_chaos_image(is_vip: bool) -> str:
+    chaos_scenes = [
+        "laughing while reality bends",
+        "ruling a meme dimension",
+        "breaking the fourth wall",
+        "fighting logic itself",
+        "emerging from glitching panels",
+    ]
+
+    chaos_styles = [
+        "absurd comic chaos",
+        "psychedelic neon",
+        "dramatic cinematic lighting",
+        "over-the-top meme energy",
+    ]
+
+    prompt = (
+        "MegaGrok "
+        + random.choice(chaos_scenes)
+        + ", "
+        + random.choice(chaos_styles)
+    )
+
+    if is_vip:
+        return await generate_stability_image(prompt)
+
+    return await generate_pollinations_image(prompt)
