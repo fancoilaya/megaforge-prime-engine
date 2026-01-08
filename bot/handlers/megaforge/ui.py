@@ -30,6 +30,7 @@ async def handle_megaforge(update: Update, context: ContextTypes.DEFAULT_TYPE):
     vip = fetch_vip_status(user_id)
     session.clear()
     session["vip"] = vip
+    session["cooldowns"] = {}
     session["state"] = ForgeState.MAIN_MENU
 
     await update.message.reply_text(
