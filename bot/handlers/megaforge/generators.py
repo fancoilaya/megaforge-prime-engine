@@ -1,63 +1,56 @@
 import random
 
-# ✅ MATCHES YOUR ACTUAL SERVICES
 from bot.services.stability_api import generate_image as generate_stability_image
 from bot.services.fallback_api import generate_fallback_image
 
-# -----------------------------
-# STYLE PROMPT MODIFIERS
-# -----------------------------
-STYLE_MAP = {
-    "comic": "bold comic book style, thick outlines, vibrant colors",
-    "cinematic": "cinematic lighting, dramatic shadows, ultra-detailed",
-    "psy": "psychedelic surreal colors, abstract shapes, dreamlike",
-}
 
 # -----------------------------
-# STANDARD IMAGE GENERATION
+# CHAOS PROMPTS
 # -----------------------------
-async def generate_image(prompt: str, is_vip: bool, style: str) -> str:
-    style_hint = STYLE_MAP.get(style, "")
-    final_prompt = f"MegaGrok, {style_hint}. {prompt}"
+CHAOS_PROMPTS = [
+    "MegaGrok breaking the fourth wall inside a comic",
+    "Grok as a chaotic trickster god in a neon comic universe",
+    "MegaGrok laughing while reality glitches around him",
+    "A comic panel tearing itself apart, Grok emerging",
+    "Absurd comic chaos, bold colors, surreal action",
+]
+
+
+def random_chaos_prompt(style: str | None = None) -> str:
+    base = random.choice(CHAOS_PROMPTS)
+
+    if style:
+        return f"{base}, {style}, comic book style, bold outlines, vibrant colors"
+
+    return f"{base}, comic book style, bold outlines, vibrant colors"
+
+
+# -----------------------------
+# IMAGE GENERATORS
+# -----------------------------
+async def generate_image(prompt: str, is_vip: bool) -> str:
+    """
+    Standard image generation.
+    VIP -> Stability (async)
+    Free -> Pollinations (sync)
+    """
+    if is_vip:
+        # Stability is async
+        return await generate_stability_image(prompt)
+
+    # Fallback is sync → DO NOT await
+    return generate_fallback_image(prompt)
+
+
+async def generate_chaos_image(is_vip: bool, style: str | None = None) -> str:
+    """
+    Chaos generator with random prompt.
+    """
+    chaos_prompt = random_chaos_prompt(style)
 
     if is_vip:
-        # VIP → Stability AI
-        return await generate_stability_image(final_prompt)
-
-    # Free → fallback engine
-    return await generate_fallback_image(final_prompt)
-
-# -----------------------------
-# CHAOS FORGE
-# -----------------------------
-async def generate_chaos_image(is_vip: bool, style: str) -> str:
-    chaos_prompts = [
-        "laughing while reality fractures into panels",
-        "emerging from a glitched meme universe",
-        "breaking the fourth wall inside a comic",
-        "rewriting the Grok timeline with chaos energy",
-        "ascending as a meme god",
-    ]
-
-    style_hint = STYLE_MAP.get(style, "")
-    chaos_prompt = f"MegaGrok {random.choice(chaos_prompts)}, {style_hint}"
-
-    if is_vip:
+        # Stability async
         return await generate_stability_image(chaos_prompt)
 
-    return await generate_fallback_image(chaos_prompt)
-
-# -----------------------------
-# REMIX LAST IMAGE
-# -----------------------------
-async def remix_last_image(is_vip: bool, style: str) -> str:
-    style_hint = STYLE_MAP.get(style, "")
-    remix_prompt = (
-        "MegaGrok remix, new angle, alternate pose, "
-        f"enhanced detail, {style_hint}"
-    )
-
-    if is_vip:
-        return await generate_stability_image(remix_prompt)
-
-    return await generate_fallback_image(remix_prompt)
+    # Pollinations sync
+    return generate_fallback_image(chaos_prompt)
