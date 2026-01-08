@@ -1,29 +1,31 @@
 import time
 
-# cooldowns in seconds
-FREE_COOLDOWN = 60 * 60        # 1 hour
-VIP_COOLDOWN = 20 * 60         # 20 minutes
+# Cooldown durations (seconds)
+FREE_COOLDOWN = 60 * 60      # 1 hour
+VIP_COOLDOWN = 20 * 60       # 20 minutes
+
+# In-memory cooldown store
+_last_image_time: dict[int, int] = {}
 
 
-def image_cooldown_remaining(session: dict, is_vip: bool) -> int:
+def image_cooldown_remaining(user_id: int, is_vip: bool) -> int | None:
     """
-    Returns remaining cooldown in seconds.
-    0 means ready.
+    Returns remaining cooldown in seconds, or None if no cooldown.
     """
-    last_used = session.get("last_image_time")
-
-    if not last_used:
-        return 0
-
     cooldown = VIP_COOLDOWN if is_vip else FREE_COOLDOWN
-    elapsed = int(time.time() - last_used)
 
+    last_used = _last_image_time.get(user_id)
+    if last_used is None:
+        return None
+
+    elapsed = int(time.time()) - last_used
     remaining = cooldown - elapsed
-    return max(0, remaining)
+
+    return remaining if remaining > 0 else None
 
 
-def mark_image_used(session: dict):
+def mark_image_used(user_id: int):
     """
-    Mark the current time as last image usage.
+    Marks image usage timestamp for cooldown tracking.
     """
-    session["last_image_time"] = int(time.time())
+    _last_image_time[user_id] = int(time.time())
