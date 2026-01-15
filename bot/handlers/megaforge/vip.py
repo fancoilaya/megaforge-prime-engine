@@ -4,42 +4,32 @@ import requests
 VIP_SERVICE_URL = os.getenv("VIP_SERVICE_URL")
 VIP_SERVICE_API_KEY = os.getenv("VIP_SERVICE_API_KEY")
 
+HEADERS = {
+    "Authorization": f"Bearer {VIP_SERVICE_API_KEY}",
+    "Content-Type": "application/json",
+}
+
 
 def get_vip_status(telegram_id: int) -> dict:
     """
-    Fetch VIP status from the VIP service.
-    Always returns a safe dict.
+    Return VIP status for a Telegram user.
+    MegaForge only cares about is_vip.
     """
     if not VIP_SERVICE_URL or not VIP_SERVICE_API_KEY:
-        return {
-            "is_vip": False,
-            "source": "missing_config",
-        }
+        return {"is_vip": False}
 
     try:
-        resp = requests.get(
-            f"{VIP_SERVICE_URL}/status/{telegram_id}",
-            headers={
-                "X-API-Key": VIP_SERVICE_API_KEY,
-            },
+        r = requests.get(
+            f"{VIP_SERVICE_URL}/vip/status",
+            params={"telegram_id": telegram_id},
+            headers=HEADERS,
             timeout=5,
         )
 
-        if resp.status_code != 200:
-            return {
-                "is_vip": False,
-                "source": "vip_service_error",
-            }
+        if r.status_code != 200:
+            return {"is_vip": False}
 
-        data = resp.json()
-
-        return {
-            "is_vip": bool(data.get("is_vip", False)),
-            "source": "vip_service",
-        }
+        return {"is_vip": bool(r.json().get("is_vip", False))}
 
     except Exception:
-        return {
-            "is_vip": False,
-            "source": "vip_service_exception",
-        }
+        return {"is_vip": False}
