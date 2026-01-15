@@ -132,6 +132,12 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     prompt = update.message.text
     context.user_data["awaiting_prompt"] = False
 
+    forge_mode = (
+        "🟢 **VIP Forge Active — High Quality Enabled**"
+        if vip["is_vip"]
+        else "🔴 **Free Forge Active**"
+    )
+    
     await update.message.reply_text(
         "🎨 **Forge in Progress**\n\n"
         "MegaGrok is rendering your idea...\n"
