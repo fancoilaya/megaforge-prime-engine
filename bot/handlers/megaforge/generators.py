@@ -22,6 +22,10 @@ async def generate_image(prompt: str, is_vip: bool) -> str:
     VIP → Stability
     Free → Pollinations fallback
     """
+    print(
+        "MEGAFORGE GENERATOR MODE:",
+        "VIP / STABILITY" if is_vip else "FREE / POLLINATIONS"
+    )
 
     style = _random_style()
 
