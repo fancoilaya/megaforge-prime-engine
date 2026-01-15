@@ -31,7 +31,7 @@ async def generate_image(prompt: str, is_vip: bool) -> str:
     )
 
     if is_vip:
-        return await generate_stability_image(final_prompt)
+        return generate_stability_image(final_prompt)
 
     # fallback is synchronous
     return generate_fallback_image(final_prompt)
